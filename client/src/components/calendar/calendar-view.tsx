@@ -19,7 +19,7 @@ export function CalendarView() {
   const endDate = endOfWeek(monthEnd);
 
   const getAssignmentsForDate = (date: Date) => {
-    return assignments.filter((assignment: Assignment) => {
+    return (assignments as Assignment[]).filter((assignment: Assignment) => {
       const assignmentDate = new Date(assignment.dueDate);
       return isSameDay(assignmentDate, date);
     });

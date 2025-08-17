@@ -1,16 +1,23 @@
-import { type Assignment, type InsertAssignment, type UpdateAssignment, type Subject, type InsertSubject } from "@shared/schema";
+import { type User, type InsertUser, type Assignment, type InsertAssignment, type UpdateAssignment, type Subject, type InsertSubject } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
+  // Users
+  getUsers(): Promise<User[]>;
+  getUser(id: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  getCurrentUser(): Promise<User>;
+  switchUser(userId: string): Promise<User>;
+  
   // Assignments
-  getAssignments(): Promise<Assignment[]>;
+  getAssignments(userId?: string): Promise<Assignment[]>;
   getAssignment(id: string): Promise<Assignment | undefined>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   updateAssignment(id: string, assignment: UpdateAssignment): Promise<Assignment | undefined>;
   deleteAssignment(id: string): Promise<boolean>;
-  getAssignmentsByStatus(status: string): Promise<Assignment[]>;
-  getAssignmentsBySubject(subject: string): Promise<Assignment[]>;
-  getUpcomingAssignments(limit?: number): Promise<Assignment[]>;
+  getAssignmentsByStatus(status: string, userId?: string): Promise<Assignment[]>;
+  getAssignmentsBySubject(subject: string, userId?: string): Promise<Assignment[]>;
+  getUpcomingAssignments(limit?: number, userId?: string): Promise<Assignment[]>;
   
   // Subjects
   getSubjects(): Promise<Subject[]>;
@@ -21,16 +28,48 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  private users: Map<string, User>;
   private assignments: Map<string, Assignment>;
   private subjects: Map<string, Subject>;
+  private currentUserId: string;
 
   constructor() {
+    this.users = new Map();
     this.assignments = new Map();
     this.subjects = new Map();
+    this.currentUserId = "";
     this.initializeDefaultData();
   }
 
   private initializeDefaultData() {
+    // Create default users
+    const zooId = randomUUID();
+    const nishId = randomUUID();
+    
+    const defaultUsers: User[] = [
+      {
+        id: zooId,
+        name: "Zoo",
+        email: "zoo@example.com",
+        avatar: null,
+        createdAt: new Date(),
+      },
+      {
+        id: nishId,
+        name: "Nish", 
+        email: "nish@example.com",
+        avatar: null,
+        createdAt: new Date(),
+      },
+    ];
+
+    defaultUsers.forEach(user => {
+      this.users.set(user.id, user);
+    });
+    
+    // Set Zoo as the current user by default
+    this.currentUserId = zooId;
+
     // Create default subjects
     const defaultSubjects: Subject[] = [
       {
@@ -68,11 +107,51 @@ export class MemStorage implements IStorage {
     });
   }
 
+  // User methods
+  async getUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = {
+      ...insertUser,
+      id,
+      email: insertUser.email || null,
+      avatar: insertUser.avatar || null,
+      createdAt: new Date(),
+    };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async getCurrentUser(): Promise<User> {
+    const user = this.users.get(this.currentUserId);
+    if (!user) {
+      throw new Error("No current user found");
+    }
+    return user;
+  }
+
+  async switchUser(userId: string): Promise<User> {
+    const user = this.users.get(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    this.currentUserId = userId;
+    return user;
+  }
+
   // Assignment methods
-  async getAssignments(): Promise<Assignment[]> {
-    return Array.from(this.assignments.values()).sort((a, b) => 
-      new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-    );
+  async getAssignments(userId?: string): Promise<Assignment[]> {
+    const targetUserId = userId || this.currentUserId;
+    return Array.from(this.assignments.values())
+      .filter(a => a.userId === targetUserId)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }
 
   async getAssignment(id: string): Promise<Assignment | undefined> {
@@ -85,6 +164,10 @@ export class MemStorage implements IStorage {
     const assignment: Assignment = {
       ...insertAssignment,
       id,
+      userId: insertAssignment.userId || this.currentUserId,
+      description: insertAssignment.description || null,
+      progress: insertAssignment.progress || 0,
+      teacher: insertAssignment.teacher || null,
       createdAt: now,
       updatedAt: now,
       googleCalendarEventId: null,
@@ -110,18 +193,23 @@ export class MemStorage implements IStorage {
     return this.assignments.delete(id);
   }
 
-  async getAssignmentsByStatus(status: string): Promise<Assignment[]> {
-    return Array.from(this.assignments.values()).filter(a => a.status === status);
+  async getAssignmentsByStatus(status: string, userId?: string): Promise<Assignment[]> {
+    const targetUserId = userId || this.currentUserId;
+    return Array.from(this.assignments.values())
+      .filter(a => a.status === status && a.userId === targetUserId);
   }
 
-  async getAssignmentsBySubject(subject: string): Promise<Assignment[]> {
-    return Array.from(this.assignments.values()).filter(a => a.subject === subject);
+  async getAssignmentsBySubject(subject: string, userId?: string): Promise<Assignment[]> {
+    const targetUserId = userId || this.currentUserId;
+    return Array.from(this.assignments.values())
+      .filter(a => a.subject === subject && a.userId === targetUserId);
   }
 
-  async getUpcomingAssignments(limit = 10): Promise<Assignment[]> {
+  async getUpcomingAssignments(limit = 10, userId?: string): Promise<Assignment[]> {
+    const targetUserId = userId || this.currentUserId;
     const now = new Date();
     return Array.from(this.assignments.values())
-      .filter(a => new Date(a.dueDate) >= now && a.status !== 'completed')
+      .filter(a => new Date(a.dueDate) >= now && a.status !== 'completed' && a.userId === targetUserId)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
       .slice(0, limit);
   }
@@ -140,6 +228,7 @@ export class MemStorage implements IStorage {
     const subject: Subject = {
       ...insertSubject,
       id,
+      teacher: insertSubject.teacher || null,
       createdAt: new Date(),
     };
     this.subjects.set(id, subject);

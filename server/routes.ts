@@ -5,6 +5,38 @@ import { insertAssignmentSchema, updateAssignmentSchema, insertSubjectSchema } f
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // User routes
+  app.get("/api/users", async (req, res) => {
+    try {
+      const users = await storage.getUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.get("/api/users/current", async (req, res) => {
+    try {
+      const user = await storage.getCurrentUser();
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch current user" });
+    }
+  });
+
+  app.post("/api/users/switch", async (req, res) => {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      const user = await storage.switchUser(userId);
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to switch user" });
+    }
+  });
+
   // Assignment routes
   app.get("/api/assignments", async (req, res) => {
     try {

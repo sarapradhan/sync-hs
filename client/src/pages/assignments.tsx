@@ -25,7 +25,7 @@ export default function Assignments() {
     queryKey: ["/api/subjects"],
   });
 
-  const filteredAssignments = assignments.filter((assignment: Assignment) => {
+  const filteredAssignments = (assignments as Assignment[]).filter((assignment: Assignment) => {
     const matchesSearch = assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          assignment.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          assignment.subject.toLowerCase().includes(searchTerm.toLowerCase());
@@ -113,7 +113,7 @@ export default function Assignments() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Subjects</SelectItem>
-                    {subjects.map((subject) => (
+                    {(subjects as any[]).map((subject) => (
                       <SelectItem key={subject.id} value={subject.name.toLowerCase()}>
                         {subject.name}
                       </SelectItem>
@@ -131,7 +131,7 @@ export default function Assignments() {
 
           {/* Results Count */}
           <div className="mb-4 text-sm text-gray-600" data-testid="results-count">
-            Showing {filteredAssignments.length} of {assignments.length} assignments
+            Showing {filteredAssignments.length} of {(assignments as Assignment[]).length} assignments
           </div>
 
           {/* Assignments List */}

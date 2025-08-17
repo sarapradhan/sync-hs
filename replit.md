@@ -1,8 +1,8 @@
-# StudySync - Student Assignment Management System
+# Zoo - Student Assignment Management System
 
 ## Overview
 
-StudySync is a full-stack web application designed to help students manage their academic assignments and tasks. The application provides features for creating, tracking, and organizing assignments with calendar integration and progress monitoring. Built with a modern React frontend and Express.js backend, it offers both desktop and mobile-responsive interfaces with a Material Design-inspired UI.
+Zoo is a full-stack web application designed to help students manage their academic assignments and tasks. The application supports multiple students (Zoo and Nish) and provides features for creating, tracking, and organizing assignments with calendar integration and progress monitoring. Built with a modern React frontend and Express.js backend, it offers both desktop and mobile-responsive interfaces with a Material Design-inspired UI.
 
 ## User Preferences
 
@@ -34,7 +34,8 @@ Preferred communication style: Simple, everyday language.
 - **In-Memory Fallback**: MemStorage class for development/testing without database connection
 
 ### Database Schema Design
-- **Assignments Table**: Core entity with fields for title, description, subject, due date, priority, status, progress, and timestamps
+- **Users Table**: Multi-user support with Zoo and Nish as default students, including name, email, and avatar fields
+- **Assignments Table**: Core entity with user association, fields for title, description, subject, due date, priority, status, progress, and timestamps
 - **Subjects Table**: Reference data for assignment categorization with color coding and teacher information
 - **Shared Types**: TypeScript interfaces generated from Drizzle schemas ensuring type consistency
 

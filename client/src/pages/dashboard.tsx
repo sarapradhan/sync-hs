@@ -17,6 +17,10 @@ export default function Dashboard() {
     queryKey: ["/api/stats"],
   });
 
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/users/current"],
+  });
+
   const handleViewAllAssignments = () => {
     setLocation("/assignments");
   };
@@ -58,7 +62,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
               <h2 className="text-2xl font-medium text-gray-900 mb-2" data-testid="welcome-message">
-                Welcome back, <span>Jane</span>!
+                Welcome back, <span>{(currentUser as any)?.name || "Student"}</span>!
               </h2>
               <p className="text-gray-600" data-testid="today-date">
                 Today is {formatDisplayDate(new Date())}

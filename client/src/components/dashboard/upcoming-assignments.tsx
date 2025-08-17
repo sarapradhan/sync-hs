@@ -25,7 +25,7 @@ export function UpcomingAssignments({ onViewAll }: UpcomingAssignmentsProps) {
     queryKey: ["/api/subjects"],
   });
 
-  const filteredAssignments = assignments.filter((assignment: Assignment) => {
+  const filteredAssignments = (assignments as Assignment[]).filter((assignment: Assignment) => {
     if (filter === "all") return true;
     return assignment.subject.toLowerCase() === filter.toLowerCase();
   });
@@ -74,7 +74,7 @@ export function UpcomingAssignments({ onViewAll }: UpcomingAssignmentsProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Subjects</SelectItem>
-                  {subjects.map((subject) => (
+                  {(subjects as any[]).map((subject) => (
                     <SelectItem key={subject.id} value={subject.name.toLowerCase()}>
                       {subject.name}
                     </SelectItem>

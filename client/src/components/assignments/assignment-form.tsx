@@ -41,6 +41,7 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
       status: assignment?.status || "pending",
       progress: assignment?.progress || 0,
       teacher: assignment?.teacher || "",
+      userId: ""
     },
   });
 

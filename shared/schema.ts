@@ -3,8 +3,17 @@ import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  email: text("email"),
+  avatar: text("avatar"),
+  createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+});
+
 export const assignments = pgTable("assignments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   subject: text("subject").notNull(),
@@ -26,6 +35,11 @@ export const subjects = pgTable("subjects", {
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertAssignmentSchema = createInsertSchema(assignments).omit({
   id: true,
   createdAt: true,
@@ -43,6 +57,8 @@ export const insertSubjectSchema = createInsertSchema(subjects).omit({
   createdAt: true,
 });
 
+export type User = typeof users.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Assignment = typeof assignments.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type UpdateAssignment = z.infer<typeof updateAssignmentSchema>;

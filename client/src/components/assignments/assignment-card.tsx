@@ -101,7 +101,7 @@ export function AssignmentCard({ assignment, onEdit, onToggleComplete, onClick }
             </Button>
           </div>
         </div>
-        {assignment.progress !== undefined && assignment.progress > 0 && (
+        {assignment.progress !== null && assignment.progress !== undefined && assignment.progress > 0 && (
           <div className="mt-3">
             <Progress 
               value={assignment.progress} 
