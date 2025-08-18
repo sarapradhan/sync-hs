@@ -123,6 +123,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all assignments (for clearing duplicates)
+  app.delete("/api/assignments", async (req, res) => {
+    try {
+      await storage.clearAllAssignments();
+      res.json({ message: "All assignments deleted successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete assignments" });
+    }
+  });
+
   // Subject routes
   app.get("/api/subjects", async (req, res) => {
     try {
@@ -379,8 +389,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               teacher: String(teacher).trim() || undefined,
             };
 
-            await storage.createAssignment(assignmentData);
-            assignmentsCreated++;
+            // Check for duplicate assignments (same title, subject, and due date)
+            const existingAssignments = await storage.getAssignments();
+            const isDuplicate = existingAssignments.some((existing: any) => 
+              existing.title === assignmentData.title &&
+              existing.subject === assignmentData.subject &&
+              new Date(existing.dueDate).toDateString() === assignmentData.dueDate.toDateString()
+            );
+
+            if (!isDuplicate) {
+              await storage.createAssignment(assignmentData);
+              assignmentsCreated++;
+            } else {
+              errors.push(`Skipping duplicate assignment: ${assignmentData.title} (${assignmentData.subject})`);
+            }
           } catch (error: any) {
             errors.push(`Error processing assignment: ${error.message}`);
           }

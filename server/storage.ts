@@ -248,6 +248,10 @@ export class MemStorage implements IStorage {
     return this.assignments.delete(id);
   }
 
+  async clearAllAssignments(): Promise<void> {
+    this.assignments.clear();
+  }
+
   async getAssignmentsByStatus(status: string): Promise<Assignment[]> {
     return Array.from(this.assignments.values())
       .filter(a => a.status === status && a.userId === this.currentUserId);
