@@ -20,7 +20,7 @@ export default function Dashboard() {
     queryKey: ["/api/stats"],
   });
   
-  const safeStats = stats || { dueToday: 0, thisWeek: 0, completed: 0, totalActive: 0 };
+  const safeStats = stats as { dueToday: number; thisWeek: number; completed: number; totalActive: number } || { dueToday: 0, thisWeek: 0, completed: 0, totalActive: 0 };
 
   const { data: currentUser } = useQuery({
     queryKey: ["/api/users/current"],

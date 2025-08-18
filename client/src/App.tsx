@@ -8,6 +8,7 @@ import { MobileNav } from "@/components/navigation/mobile-nav";
 import Dashboard from "@/pages/dashboard";
 import Assignments from "@/pages/assignments";
 import Calendar from "@/pages/calendar";
+import Subjects from "@/pages/subjects";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 import { AssignmentForm } from "@/components/assignments/assignment-form";
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/assignments" component={Assignments} />
       <Route path="/calendar" component={Calendar} />
+      <Route path="/subjects" component={Subjects} />
       <Route component={NotFound} />
     </Switch>
   );

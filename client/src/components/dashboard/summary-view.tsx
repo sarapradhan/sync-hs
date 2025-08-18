@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { SubjectBadge } from "@/components/ui/subject-badge";
+import { SubjectDot } from "@/components/ui/subject-dot";
 import { CheckCircle2, Clock, AlertTriangle, Calendar } from "lucide-react";
 import type { Assignment } from "@shared/schema";
 
@@ -301,9 +303,11 @@ export function SummaryView() {
                         })}
                       </td>
                       <td className="py-3 px-2">
-                        <Badge variant="outline" className="text-xs">
-                          {assignment.subject}
-                        </Badge>
+                        <SubjectBadge 
+                          subjectName={assignment.subject}
+                          variant="outline"
+                          size="sm"
+                        />
                       </td>
                       <td className="py-3 px-2 text-gray-600 capitalize">
                         {assignment.type || 'Assignment'}

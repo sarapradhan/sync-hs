@@ -43,4 +43,6 @@ export const MATERIAL_ICONS = {
   export: 'table_chart',
   close: 'close',
   settings: 'settings',
+  color_lens: 'color_lens',
+  palette: 'palette',
 } as const;

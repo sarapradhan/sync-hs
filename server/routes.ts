@@ -154,6 +154,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/subjects/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const updatedSubject = await storage.updateSubject(id, updates);
+      if (!updatedSubject) {
+        return res.status(404).json({ message: "Subject not found" });
+      }
+      
+      res.json(updatedSubject);
+    } catch (error) {
+      console.error("Error updating subject:", error);
+      res.status(500).json({ message: "Failed to update subject" });
+    }
+  });
+
   app.delete("/api/subjects/:id", async (req, res) => {
     try {
       const success = await storage.deleteSubject(req.params.id);

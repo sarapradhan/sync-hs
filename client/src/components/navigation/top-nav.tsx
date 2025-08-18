@@ -47,6 +47,7 @@ export function TopNav({ onAddAssignment }: TopNavProps) {
     { path: "/", label: "Dashboard", icon: MATERIAL_ICONS.dashboard },
     { path: "/assignments", label: "Assignments", icon: MATERIAL_ICONS.assignment },
     { path: "/calendar", label: "Calendar", icon: MATERIAL_ICONS.calendar },
+    { path: "/subjects", label: "Subjects", icon: "color_lens" },
   ];
 
   return (
