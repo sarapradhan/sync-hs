@@ -51,6 +51,24 @@ Preferred communication style: Simple, everyday language.
 - **Security**: CORS configuration and secure session handling
 - **User Context**: Prepared for multi-user scenarios with session-based authentication
 
+## Recent Changes
+
+### Summary View Table Redesign (December 18, 2024)
+- Reorganized table columns to prioritize key information: Class, Assignment, Due Date, Due Time, Type, Status, Points Earned/Possible, Grade, Days Until
+- Implemented real-time days calculation based on current date vs due date
+- Added smart date display with urgency color coding (red ≤1 day, yellow ≤3 days)
+- Combined points earned/possible into single column format
+- Removed unnecessary columns (description, todo, progress) for cleaner interface
+- Enhanced mobile responsiveness by reducing column count from 12 to 9
+
+### Subject Color-Coding System (December 18, 2024)
+- Built interactive SubjectBadge and SubjectDot components with customizable colors
+- Created subject color manager with color picker interface
+- Added Subjects page with full color customization functionality
+- Implemented API endpoints for updating subject colors with persistence
+- Applied color coding consistently across dashboard, assignments, and summary views
+- Added Subjects navigation to both desktop and mobile navigation menus
+
 ## External Dependencies
 
 ### Core Framework Dependencies

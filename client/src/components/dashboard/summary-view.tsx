@@ -251,101 +251,103 @@ export function SummaryView() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wide">
-                  <th className="text-left py-3 px-2">Status</th>
-                  <th className="text-left py-3 px-2">Description</th>
+                  <th className="text-left py-3 px-2">Class</th>
+                  <th className="text-left py-3 px-2">Assignment</th>
                   <th className="text-left py-3 px-2">Due Date</th>
                   <th className="text-left py-3 px-2">Due Time</th>
-                  <th className="text-left py-3 px-2">Class</th>
                   <th className="text-left py-3 px-2">Type</th>
-                  <th className="text-left py-3 px-2">Assignment</th>
-                  <th className="text-left py-3 px-2">Days Until</th>
-                  <th className="text-left py-3 px-2">To Do</th>
-                  <th className="text-left py-3 px-2">Points Earned</th>
-                  <th className="text-left py-3 px-2">Points Possible</th>
+                  <th className="text-left py-3 px-2">Status</th>
+                  <th className="text-left py-3 px-2">Points Earned/Possible</th>
                   <th className="text-left py-3 px-2">Grade</th>
+                  <th className="text-left py-3 px-2">Days Until</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {sortedAssignments.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="text-center py-8 text-gray-500">
+                    <td colSpan={9} className="text-center py-8 text-gray-500">
                       No assignments found. Upload a spreadsheet or create assignments to see them here.
                     </td>
                   </tr>
                 ) : (
-                  sortedAssignments.map((assignment) => (
-                    <tr key={assignment.id} className="border-b border-gray-100 hover:bg-gray-50" data-testid={`assignment-row-${assignment.id}`}>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(assignment.status)}
-                          <Badge variant="secondary" className={getStatusColor(assignment.status)}>
-                            {assignment.status}
-                          </Badge>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2 max-w-48">
-                        <div className="truncate font-medium text-gray-900">{assignment.title}</div>
-                        {assignment.description && (
-                          <div className="text-xs text-gray-500 truncate">{assignment.description}</div>
-                        )}
-                      </td>
-                      <td className="py-3 px-2 text-gray-600">
-                        {new Date(assignment.dueDate).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric' 
-                        })}
-                      </td>
-                      <td className="py-3 px-2 text-gray-600">
-                        {new Date(assignment.dueDate).toLocaleTimeString('en-US', { 
-                          hour: 'numeric',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </td>
-                      <td className="py-3 px-2">
-                        <SubjectBadge 
-                          subjectName={assignment.subject}
-                          variant="outline"
-                          size="sm"
-                        />
-                      </td>
-                      <td className="py-3 px-2 text-gray-600 capitalize">
-                        {assignment.type || 'Assignment'}
-                      </td>
-                      <td className="py-3 px-2 max-w-32">
-                        <div className="truncate text-gray-900">{assignment.title}</div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3 text-gray-400" />
-                          <span className={`text-sm ${assignment.daysUntilDue <= 1 ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                            {assignment.daysUntilDue}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-2">
-                        <input 
-                          type="checkbox" 
-                          checked={assignment.status === 'completed'} 
-                          readOnly
-                          className="w-4 h-4 text-blue-600 rounded border-gray-300"
-                        />
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        {assignment.pointsEarned ?? '—'}
-                      </td>
-                      <td className="py-3 px-2 text-center">
-                        {assignment.pointsPossible ?? '—'}
-                      </td>
-                      <td className="py-3 px-2 text-center font-medium">
-                        {assignment.pointsEarned && assignment.pointsPossible ? (
-                          <span className={assignment.pointsEarned / assignment.pointsPossible >= 0.9 ? 'text-green-600' : assignment.pointsEarned / assignment.pointsPossible >= 0.8 ? 'text-yellow-600' : 'text-red-600'}>
-                            {Math.round((assignment.pointsEarned / assignment.pointsPossible) * 100)}%
-                          </span>
-                        ) : '—'}
-                      </td>
-                    </tr>
-                  ))
+                  sortedAssignments.map((assignment) => {
+                    // Calculate days until due date
+                    const now = new Date();
+                    const dueDate = new Date(assignment.dueDate);
+                    const timeDiff = dueDate.getTime() - now.getTime();
+                    const daysUntil = Math.ceil(timeDiff / (1000 * 3600 * 24));
+                    
+                    return (
+                      <tr key={assignment.id} className="border-b border-gray-100 hover:bg-gray-50" data-testid={`assignment-row-${assignment.id}`}>
+                        {/* Class */}
+                        <td className="py-3 px-2">
+                          <SubjectBadge 
+                            subjectName={assignment.subject}
+                            variant="outline"
+                            size="sm"
+                          />
+                        </td>
+                        {/* Assignment */}
+                        <td className="py-3 px-2 max-w-48">
+                          <div className="truncate font-medium text-gray-900">{assignment.title}</div>
+                        </td>
+                        {/* Due Date */}
+                        <td className="py-3 px-2 text-gray-600">
+                          {new Date(assignment.dueDate).toLocaleDateString('en-US', { 
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        {/* Due Time */}
+                        <td className="py-3 px-2 text-gray-600">
+                          {new Date(assignment.dueDate).toLocaleTimeString('en-US', { 
+                            hour: 'numeric',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </td>
+                        {/* Type */}
+                        <td className="py-3 px-2 text-gray-600 capitalize">
+                          {assignment.type || 'Assignment'}
+                        </td>
+                        {/* Status */}
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(assignment.status)}
+                            <Badge variant="secondary" className={getStatusColor(assignment.status)}>
+                              {assignment.status}
+                            </Badge>
+                          </div>
+                        </td>
+                        {/* Points Earned/Possible */}
+                        <td className="py-3 px-2 text-center">
+                          {assignment.pointsEarned && assignment.pointsPossible ? (
+                            `${assignment.pointsEarned}/${assignment.pointsPossible}`
+                          ) : assignment.pointsPossible ? (
+                            `—/${assignment.pointsPossible}`
+                          ) : '—'}
+                        </td>
+                        {/* Grade */}
+                        <td className="py-3 px-2 text-center font-medium">
+                          {assignment.pointsEarned && assignment.pointsPossible ? (
+                            <span className={assignment.pointsEarned / assignment.pointsPossible >= 0.9 ? 'text-green-600' : assignment.pointsEarned / assignment.pointsPossible >= 0.8 ? 'text-yellow-600' : 'text-red-600'}>
+                              {Math.round((assignment.pointsEarned / assignment.pointsPossible) * 100)}%
+                            </span>
+                          ) : '—'}
+                        </td>
+                        {/* Days Until */}
+                        <td className="py-3 px-2">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3 text-gray-400" />
+                            <span className={`text-sm ${daysUntil <= 1 ? 'text-red-600 font-medium' : daysUntil <= 3 ? 'text-yellow-600 font-medium' : 'text-gray-600'}`}>
+                              {daysUntil > 0 ? `${daysUntil}d` : daysUntil === 0 ? 'Today' : `${Math.abs(daysUntil)}d ago`}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
