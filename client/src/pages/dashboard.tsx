@@ -8,6 +8,7 @@ import { QuickActions } from "@/components/dashboard/quick-actions";
 import { AssignmentForm } from "@/components/assignments/assignment-form";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { formatDisplayDate } from "@/lib/dates";
+import { SpreadsheetUploader } from "@/components/assignments/spreadsheet-uploader";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();

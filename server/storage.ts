@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type UpdateUser, type Assignment, type InsertAssignment, type UpdateAssignment, type Subject, type InsertSubject } from "@shared/schema";
+import { type User, type InsertUser, type UpdateUser, type Assignment, type InsertAssignment, type UpdateAssignment, type Subject, type InsertSubject, type UploadLog, type InsertUploadLog, type UpdateUploadLog } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
@@ -27,18 +27,25 @@ export interface IStorage {
   createSubject(subject: InsertSubject): Promise<Subject>;
   updateSubject(id: string, subject: Partial<InsertSubject>): Promise<Subject | undefined>;
   deleteSubject(id: string): Promise<boolean>;
+  
+  // Upload logs
+  getUploadLogs(): Promise<UploadLog[]>;
+  createUploadLog(uploadLog: InsertUploadLog): Promise<UploadLog>;
+  updateUploadLog(id: string, uploadLog: UpdateUploadLog): Promise<UploadLog | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private assignments: Map<string, Assignment>;
   private subjects: Map<string, Subject>;
+  private uploadLogs: Map<string, UploadLog>;
   private currentUserId: string;
 
   constructor() {
     this.users = new Map();
     this.assignments = new Map();
     this.subjects = new Map();
+    this.uploadLogs = new Map();
     this.currentUserId = "";
     this.initializeDefaultData();
   }
@@ -273,6 +280,40 @@ export class MemStorage implements IStorage {
 
   async deleteSubject(id: string): Promise<boolean> {
     return this.subjects.delete(id);
+  }
+
+  // Upload log methods
+  async getUploadLogs(): Promise<UploadLog[]> {
+    return Array.from(this.uploadLogs.values())
+      .filter(log => log.userId === this.currentUserId)
+      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+  }
+
+  async createUploadLog(insertUploadLog: InsertUploadLog): Promise<UploadLog> {
+    const id = randomUUID();
+    const uploadLog: UploadLog = {
+      ...insertUploadLog,
+      id,
+      userId: this.currentUserId,
+      uploadedAt: new Date(),
+      processedAt: null,
+      assignmentsCreated: 0,
+      errorMessage: null,
+    };
+    this.uploadLogs.set(id, uploadLog);
+    return uploadLog;
+  }
+
+  async updateUploadLog(id: string, updateUploadLog: UpdateUploadLog): Promise<UploadLog | undefined> {
+    const existing = this.uploadLogs.get(id);
+    if (!existing) return undefined;
+
+    const updated: UploadLog = {
+      ...existing,
+      ...updateUploadLog,
+    };
+    this.uploadLogs.set(id, updated);
+    return updated;
   }
 }
 

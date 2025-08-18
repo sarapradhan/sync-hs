@@ -70,3 +70,25 @@ export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type UpdateAssignment = z.infer<typeof updateAssignmentSchema>;
 export type Subject = typeof subjects.$inferSelect;
 export type InsertSubject = z.infer<typeof insertSubjectSchema>;
+export type UpdateSubject = Partial<InsertSubject>;
+
+// Spreadsheet upload tracking
+export const uploadLogs = pgTable("upload_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  filename: text("filename").notNull(),
+  uploadedAt: timestamp("uploaded_at").default(sql`now()`).notNull(),
+  processedAt: timestamp("processed_at"),
+  status: text("status", { enum: ["pending", "processing", "completed", "failed"] }).notNull().default("pending"),
+  assignmentsCreated: integer("assignments_created").default(0),
+  errorMessage: text("error_message"),
+});
+
+export const insertUploadLogSchema = createInsertSchema(uploadLogs).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export type UploadLog = typeof uploadLogs.$inferSelect;
+export type InsertUploadLog = z.infer<typeof insertUploadLogSchema>;
+export type UpdateUploadLog = Partial<InsertUploadLog>;

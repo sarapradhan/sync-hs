@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { MATERIAL_ICONS } from "@/lib/constants";
+import { SpreadsheetUploader } from "@/components/assignments/spreadsheet-uploader";
 
 export function QuickActions() {
   const { toast } = useToast();
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   const importCalendarMutation = useMutation({
     mutationFn: async () => {
@@ -49,10 +53,7 @@ export function QuickActions() {
   });
 
   const handleFileUpload = () => {
-    toast({
-      title: "Coming Soon",
-      description: "Document upload feature will be available soon!",
-    });
+    setIsUploadDialogOpen(true);
   };
 
   const actions = [
@@ -67,13 +68,13 @@ export function QuickActions() {
       disabled: importCalendarMutation.isPending,
     },
     {
-      title: "Upload Syllabus",
-      description: "Extract assignments automatically",
+      title: "Upload Spreadsheet",
+      description: "Import assignments from Excel/CSV",
       icon: MATERIAL_ICONS.upload,
       bgColor: "bg-green-500 bg-opacity-10",
       iconColor: "text-green-500",
       onClick: handleFileUpload,
-      testId: "button-upload-document",
+      testId: "button-upload-spreadsheet",
       disabled: false,
     },
     {
@@ -89,34 +90,45 @@ export function QuickActions() {
   ];
 
   return (
-    <Card className="shadow-material-1" data-testid="quick-actions">
-      <CardHeader>
-        <CardTitle className="text-lg font-medium text-gray-900">Quick Actions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {actions.map((action) => (
-            <Button
-              key={action.testId}
-              variant="ghost"
-              className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors h-auto"
-              onClick={action.onClick}
-              disabled={action.disabled}
-              data-testid={action.testId}
-            >
-              <div className={`p-2 ${action.bgColor} rounded-lg flex-shrink-0`}>
-                <span className={`material-icons ${action.iconColor} text-sm`}>
-                  {action.icon}
-                </span>
-              </div>
-              <div className="text-left">
-                <p className="font-medium text-gray-900">{action.title}</p>
-                <p className="text-xs text-gray-500">{action.description}</p>
-              </div>
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="shadow-material-1" data-testid="quick-actions">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium text-gray-900">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {actions.map((action) => (
+              <Button
+                key={action.testId}
+                variant="ghost"
+                className="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors h-auto"
+                onClick={action.onClick}
+                disabled={action.disabled}
+                data-testid={action.testId}
+              >
+                <div className={`p-2 ${action.bgColor} rounded-lg flex-shrink-0`}>
+                  <span className={`material-icons ${action.iconColor} text-sm`}>
+                    {action.icon}
+                  </span>
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-gray-900">{action.title}</p>
+                  <p className="text-xs text-gray-500">{action.description}</p>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Upload Spreadsheet</DialogTitle>
+          </DialogHeader>
+          <SpreadsheetUploader onClose={() => setIsUploadDialogOpen(false)} />
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

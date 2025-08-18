@@ -2,7 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertAssignmentSchema, updateAssignmentSchema, insertSubjectSchema } from "@shared/schema";
+import { ObjectStorageService } from "./objectStorage";
 import { z } from "zod";
+import * as XLSX from "xlsx";
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // User routes
@@ -192,6 +195,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to export to Google Sheets" });
+    }
+  });
+
+  // Spreadsheet upload routes
+  app.post("/api/spreadsheet/upload-url", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ message: "Failed to get upload URL" });
+    }
+  });
+
+  app.post("/api/spreadsheet/process", async (req, res) => {
+    try {
+      const { uploadURL, filename } = req.body;
+      
+      if (!uploadURL || !filename) {
+        return res.status(400).json({ message: "Upload URL and filename are required" });
+      }
+
+      // Create upload log
+      const uploadLog = await storage.createUploadLog({
+        filename,
+        status: "processing",
+      });
+
+      try {
+        // Download the file from the upload URL
+        const response = await fetch(uploadURL);
+        if (!response.ok) {
+          throw new Error(`Failed to download file: ${response.statusText}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        
+        // Get the first sheet
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert to JSON
+        const data = XLSX.utils.sheet_to_json(worksheet);
+        
+        let assignmentsCreated = 0;
+        const errors: string[] = [];
+
+        // Process each row
+        for (const row of data as any[]) {
+          try {
+            // Map spreadsheet columns to assignment fields
+            const title = row.Title || row.title || row.TITLE;
+            const subject = row.Subject || row.subject || row.SUBJECT;
+            const dueDate = row['Due Date'] || row.DueDate || row['due date'] || row.dueDate;
+            const description = row.Description || row.description || row.DESCRIPTION || "";
+            const priority = (row.Priority || row.priority || row.PRIORITY || "medium").toLowerCase();
+            const teacher = row.Teacher || row.teacher || row.TEACHER || "";
+
+            if (!title || !subject || !dueDate) {
+              errors.push(`Skipping row with missing required fields`);
+              continue;
+            }
+
+            // Parse due date
+            let parsedDueDate: Date;
+            if (typeof dueDate === 'string') {
+              parsedDueDate = new Date(dueDate);
+            } else if (typeof dueDate === 'number') {
+              // Excel date serial number
+              parsedDueDate = new Date((dueDate - 25569) * 86400 * 1000);
+            } else {
+              parsedDueDate = new Date(dueDate);
+            }
+
+            if (isNaN(parsedDueDate.getTime())) {
+              errors.push(`Invalid date format for assignment: ${title}`);
+              continue;
+            }
+
+            // Validate priority
+            const validPriorities = ['low', 'medium', 'high'];
+            const finalPriority = validPriorities.includes(priority) ? priority : 'medium';
+
+            // Create assignment
+            const assignmentData = {
+              title: String(title).trim(),
+              subject: String(subject).trim(),
+              description: String(description).trim(),
+              dueDate: parsedDueDate.toISOString(),
+              priority: finalPriority as 'low' | 'medium' | 'high',
+              teacher: String(teacher).trim() || undefined,
+            };
+
+            await storage.createAssignment(assignmentData);
+            assignmentsCreated++;
+          } catch (error: any) {
+            errors.push(`Error processing assignment: ${error.message}`);
+          }
+        }
+
+        // Update upload log
+        await storage.updateUploadLog(uploadLog.id, {
+          status: "completed",
+          processedAt: new Date(),
+          assignmentsCreated,
+          errorMessage: errors.length > 0 ? errors.join('; ') : null,
+        });
+
+        res.json({
+          assignmentsCreated,
+          errors: errors.length > 0 ? errors : undefined,
+          message: `Successfully imported ${assignmentsCreated} assignments`,
+        });
+
+      } catch (error: any) {
+        // Update upload log with error
+        await storage.updateUploadLog(uploadLog.id, {
+          status: "failed",
+          processedAt: new Date(),
+          errorMessage: error.message,
+        });
+
+        throw error;
+      }
+
+    } catch (error: any) {
+      console.error("Error processing spreadsheet:", error);
+      res.status(500).json({ 
+        message: "Failed to process spreadsheet", 
+        error: error.message 
+      });
     }
   });
 
