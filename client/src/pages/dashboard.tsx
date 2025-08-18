@@ -9,14 +9,18 @@ import { AssignmentForm } from "@/components/assignments/assignment-form";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { formatDisplayDate } from "@/lib/dates";
 import { SpreadsheetUploader } from "@/components/assignments/spreadsheet-uploader";
+import { SummaryView } from "@/components/dashboard/summary-view";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const { data: stats = { dueToday: 0, thisWeek: 0, completed: 0, totalActive: 0 }, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/stats"],
   });
+  
+  const safeStats = stats || { dueToday: 0, thisWeek: 0, completed: 0, totalActive: 0 };
 
   const { data: currentUser } = useQuery({
     queryKey: ["/api/users/current"],
@@ -72,10 +76,18 @@ export default function Dashboard() {
           </div>
 
           {/* Quick Stats Cards */}
-          <StatsCards stats={stats} />
+          <StatsCards stats={safeStats} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Dashboard Tabs */}
+        <Tabs defaultValue="overview" className="mb-6">
+          <TabsList className="mb-6">
+            <TabsTrigger value="overview" data-testid="tab-overview">Overview</TabsTrigger>
+            <TabsTrigger value="summary" data-testid="tab-summary">Summary View</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column: Upcoming Assignments */}
           <div className="lg:col-span-2">
             <UpcomingAssignments onViewAll={handleViewAllAssignments} />
@@ -86,7 +98,13 @@ export default function Dashboard() {
             <MiniCalendar onViewFull={handleViewFullCalendar} />
             <QuickActions />
           </div>
-        </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="summary">
+            <SummaryView />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <FloatingActionButton onClick={handleOpenForm} />
