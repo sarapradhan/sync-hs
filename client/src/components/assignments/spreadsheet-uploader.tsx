@@ -12,9 +12,10 @@ import type { UploadResult } from "@uppy/core";
 
 interface SpreadsheetUploaderProps {
   onSuccess?: () => void;
+  onClose?: () => void;
 }
 
-export function SpreadsheetUploader({ onSuccess }: SpreadsheetUploaderProps) {
+export function SpreadsheetUploader({ onSuccess, onClose }: SpreadsheetUploaderProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState<string>("");
@@ -47,9 +48,11 @@ export function SpreadsheetUploader({ onSuccess }: SpreadsheetUploaderProps) {
         description: `Created ${data.assignmentsCreated} assignments from your spreadsheet.`,
       });
 
-      // Refresh assignments data
+      // Refresh all related data to update calendar and assignments
       queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assignments/upcoming"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
       
       onSuccess?.();
     },

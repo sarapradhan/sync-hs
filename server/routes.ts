@@ -220,6 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create upload log
       const uploadLog = await storage.createUploadLog({
+        userId: storage.getCurrentUserId(),
         filename,
         status: "processing",
       });
@@ -247,23 +248,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Process each row
         for (const row of data as any[]) {
           try {
-            // Map spreadsheet columns to assignment fields
-            const title = row.Title || row.title || row.TITLE;
-            const subject = row.Subject || row.subject || row.SUBJECT;
-            const dueDate = row['Due Date'] || row.DueDate || row['due date'] || row.dueDate;
-            const description = row.Description || row.description || row.DESCRIPTION || "";
-            const priority = (row.Priority || row.priority || row.PRIORITY || "medium").toLowerCase();
-            const teacher = row.Teacher || row.teacher || row.TEACHER || "";
+            // Map spreadsheet columns to assignment fields (supports multiple column name variations)
+            const title = row.Title || row.title || row.TITLE || row.Assignment || row.assignment || 
+                         row.ASSIGNMENT || row.Task || row.task || row.TASK || row.Name || row.name || row.NAME;
+            
+            const subject = row.Subject || row.subject || row.SUBJECT || row.Course || row.course || 
+                           row.COURSE || row.Class || row.class || row.CLASS;
+            
+            const dueDate = row['Due Date'] || row.DueDate || row['due date'] || row.dueDate || 
+                           row.DUE_DATE || row['Due'] || row.due || row.DUE || row.Date || row.date || 
+                           row.DATE || row.Deadline || row.deadline || row.DEADLINE;
+            
+            const description = row.Description || row.description || row.DESCRIPTION || 
+                               row.Details || row.details || row.DETAILS || row.Notes || row.notes || 
+                               row.NOTES || row.Instructions || row.instructions || row.INSTRUCTIONS || "";
+            
+            const priority = (row.Priority || row.priority || row.PRIORITY || row.Importance || 
+                             row.importance || row.IMPORTANCE || "medium").toString().toLowerCase();
+            
+            const teacher = row.Teacher || row.teacher || row.TEACHER || row.Instructor || 
+                           row.instructor || row.INSTRUCTOR || row.Professor || row.professor || 
+                           row.PROFESSOR || "";
+
+            // Additional fields for better assignment tracking
+            const status = (row.Status || row.status || row.STATUS || "pending").toString().toLowerCase();
+            const progress = parseInt(row.Progress || row.progress || row.PROGRESS || "0") || 0;
 
             if (!title || !subject || !dueDate) {
-              errors.push(`Skipping row with missing required fields`);
+              errors.push(`Skipping row with missing required fields: Title="${title}", Subject="${subject}", DueDate="${dueDate}"`);
               continue;
             }
 
-            // Parse due date
+            // Enhanced date parsing
             let parsedDueDate: Date;
             if (typeof dueDate === 'string') {
-              parsedDueDate = new Date(dueDate);
+              // Try multiple date formats
+              const cleanDate = dueDate.trim();
+              parsedDueDate = new Date(cleanDate);
+              
+              // If basic parsing fails, try common formats
+              if (isNaN(parsedDueDate.getTime())) {
+                const formats = [
+                  // MM/DD/YYYY
+                  /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+                  // DD/MM/YYYY
+                  /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+                  // YYYY-MM-DD
+                  /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+                ];
+                
+                for (const format of formats) {
+                  const match = cleanDate.match(format);
+                  if (match) {
+                    if (cleanDate.includes('-')) {
+                      // ISO format
+                      parsedDueDate = new Date(cleanDate);
+                    } else {
+                      // Assume MM/DD/YYYY for slash format
+                      const [, month, day, year] = match;
+                      parsedDueDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                    }
+                    break;
+                  }
+                }
+              }
             } else if (typeof dueDate === 'number') {
               // Excel date serial number
               parsedDueDate = new Date((dueDate - 25569) * 86400 * 1000);
@@ -272,21 +320,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             if (isNaN(parsedDueDate.getTime())) {
-              errors.push(`Invalid date format for assignment: ${title}`);
+              errors.push(`Invalid date format for assignment "${title}": ${dueDate}`);
               continue;
             }
 
-            // Validate priority
+            // Validate and normalize priority
             const validPriorities = ['low', 'medium', 'high'];
-            const finalPriority = validPriorities.includes(priority) ? priority : 'medium';
+            let finalPriority = 'medium';
+            
+            if (validPriorities.includes(priority)) {
+              finalPriority = priority;
+            } else if (priority.includes('high') || priority.includes('urgent') || priority === '3') {
+              finalPriority = 'high';
+            } else if (priority.includes('low') || priority === '1') {
+              finalPriority = 'low';
+            }
 
-            // Create assignment
+            // Validate and normalize status
+            const validStatuses = ['pending', 'in-progress', 'completed'];
+            let finalStatus = 'pending';
+            
+            if (validStatuses.includes(status)) {
+              finalStatus = status;
+            } else if (status.includes('complete') || status.includes('done') || status.includes('finished')) {
+              finalStatus = 'completed';
+            } else if (status.includes('progress') || status.includes('working') || status.includes('started')) {
+              finalStatus = 'in-progress';
+            }
+
+            // Create assignment with all parsed data
             const assignmentData = {
+              userId: storage.getCurrentUserId(),
               title: String(title).trim(),
               subject: String(subject).trim(),
               description: String(description).trim(),
-              dueDate: parsedDueDate.toISOString(),
+              dueDate: parsedDueDate,
               priority: finalPriority as 'low' | 'medium' | 'high',
+              status: finalStatus as 'pending' | 'in-progress' | 'completed',
+              progress: Math.min(Math.max(progress, 0), 100), // Clamp between 0-100
               teacher: String(teacher).trim() || undefined,
             };
 
