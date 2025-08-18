@@ -198,28 +198,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Spreadsheet upload routes
-  app.post("/api/spreadsheet/upload-url", async (req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
-    } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ message: "Failed to get upload URL" });
+  // Direct file upload for spreadsheets - using dynamic import for ES modules
+  const multer = (await import('multer')).default;
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+    fileFilter: (req: any, file: any, cb: any) => {
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+        'application/vnd.ms-excel', // .xls
+        'text/csv' // .csv
+      ];
+      if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only Excel (.xlsx, .xls) and CSV files are allowed'));
+      }
     }
   });
 
-  app.post("/api/spreadsheet/process", async (req, res) => {
+  app.post("/api/spreadsheet/upload", upload.single('file'), async (req: any, res) => {
     try {
-      const { uploadURL, filename } = req.body;
-      
-      if (!uploadURL || !filename) {
-        return res.status(400).json({ message: "Upload URL and filename are required" });
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Create upload log
       const currentUser = await storage.getCurrentUser();
+      const filename = req.file.originalname;
+      const fileBuffer = req.file.buffer;
+
+      // Create upload log
       const uploadLog = await storage.createUploadLog({
         userId: currentUser.id,
         filename,
@@ -227,14 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       try {
-        // Download the file from the upload URL
-        const response = await fetch(uploadURL);
-        if (!response.ok) {
-          throw new Error(`Failed to download file: ${response.statusText}`);
-        }
-
-        const buffer = await response.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
+        const workbook = XLSX.read(fileBuffer, { type: 'buffer' });
         
         // Get the first sheet
         const sheetName = workbook.SheetNames[0];

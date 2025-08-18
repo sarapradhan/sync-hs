@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { ObjectUploader } from "@/components/ObjectUploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import { MATERIAL_ICONS } from "@/lib/constants";
-import type { UploadResult } from "@uppy/core";
 
 interface SpreadsheetUploaderProps {
   onSuccess?: () => void;
@@ -19,23 +16,25 @@ export function SpreadsheetUploader({ onSuccess, onClose }: SpreadsheetUploaderP
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [processingStatus, setProcessingStatus] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const getUploadUrlMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/spreadsheet/upload-url", {});
-      const data = await response.json();
-      return data;
-    },
-  });
-
-  const processSpreadsheetMutation = useMutation({
-    mutationFn: async (uploadData: { uploadURL: string; filename: string }) => {
-      const response = await apiRequest("POST", "/api/spreadsheet/process", {
-        uploadURL: uploadData.uploadURL,
-        filename: uploadData.filename,
+  const uploadSpreadsheetMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/spreadsheet/upload', {
+        method: 'POST',
+        body: formData,
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Upload failed');
+      }
+      
       return response.json();
     },
     onSuccess: (data) => {
@@ -68,39 +67,49 @@ export function SpreadsheetUploader({ onSuccess, onClose }: SpreadsheetUploaderP
     },
   });
 
-  const handleGetUploadParameters = async () => {
-    const data = await getUploadUrlMutation.mutateAsync();
-    return {
-      method: "PUT" as const,
-      url: data.uploadURL,
-    };
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const allowedTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'text/csv'
+      ];
+      
+      if (allowedTypes.includes(file.type)) {
+        setSelectedFile(file);
+        setProcessingStatus("");
+      } else {
+        toast({
+          title: "Invalid File Type",
+          description: "Please select an Excel (.xlsx, .xls) or CSV file",
+          variant: "destructive",
+        });
+      }
+    }
   };
 
-  const handleUploadComplete = async (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-    if (result.successful && result.successful.length > 0) {
-      const uploadedFile = result.successful[0];
-      const uploadURL = uploadedFile.uploadURL as string;
-      const filename = uploadedFile.name as string;
+  const handleUpload = async () => {
+    if (!selectedFile) return;
 
-      setIsProcessing(true);
-      setUploadProgress(25);
-      setProcessingStatus("📄 Processing spreadsheet...");
+    setIsProcessing(true);
+    setUploadProgress(25);
+    setProcessingStatus("📄 Processing spreadsheet...");
 
-      // Simulate processing steps for better UX
-      setTimeout(() => {
-        setUploadProgress(50);
-        setProcessingStatus("📋 Parsing assignments...");
-      }, 1000);
+    // Simulate processing steps for better UX
+    setTimeout(() => {
+      setUploadProgress(50);
+      setProcessingStatus("📋 Parsing assignments...");
+    }, 1000);
 
-      setTimeout(() => {
-        setUploadProgress(75);
-        setProcessingStatus("📅 Creating calendar entries...");
-      }, 2000);
+    setTimeout(() => {
+      setUploadProgress(75);
+      setProcessingStatus("📅 Creating calendar entries...");
+    }, 2000);
 
-      setTimeout(async () => {
-        await processSpreadsheetMutation.mutateAsync({ uploadURL, filename });
-      }, 3000);
-    }
+    setTimeout(async () => {
+      await uploadSpreadsheetMutation.mutateAsync(selectedFile);
+    }, 3000);
   };
 
   return (
@@ -125,23 +134,35 @@ export function SpreadsheetUploader({ onSuccess, onClose }: SpreadsheetUploaderP
           </AlertDescription>
         </Alert>
 
-        {/* Upload Button */}
+        {/* Upload Section */}
         {!isProcessing && (
-          <ObjectUploader
-            maxNumberOfFiles={1}
-            maxFileSize={5242880} // 5MB
-            onGetUploadParameters={handleGetUploadParameters}
-            onComplete={handleUploadComplete}
-            buttonClassName="w-full bg-material-blue-500 hover:bg-material-blue-600 text-white"
-          >
-            <div className="flex items-center justify-center gap-3 py-8">
-              <span className="material-icons text-2xl">cloud_upload</span>
-              <div className="text-center">
-                <div className="text-lg font-medium">Upload Spreadsheet</div>
-                <div className="text-sm opacity-80">Click to select Excel (.xlsx) or CSV file</div>
-              </div>
+          <div className="flex flex-col items-center space-y-4">
+            <div className="w-full">
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleFileSelect}
+                className="w-full p-3 border border-gray-300 rounded-lg cursor-pointer hover:border-blue-400 focus:border-blue-500 focus:outline-none"
+                disabled={isProcessing}
+              />
+              {selectedFile && (
+                <p className="text-sm text-gray-600 mt-2">
+                  Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                </p>
+              )}
             </div>
-          </ObjectUploader>
+            
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || isProcessing}
+              className="w-full h-16 text-lg bg-material-blue-500 hover:bg-material-blue-600 text-white rounded-lg shadow-md transition-all duration-200"
+            >
+              <div className="flex items-center justify-center space-x-2">
+                <span className="material-icons text-2xl">cloud_upload</span>
+                <span>{isProcessing ? "Processing..." : "Upload Spreadsheet"}</span>
+              </div>
+            </Button>
+          </div>
         )}
 
         {/* Processing Status */}
