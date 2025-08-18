@@ -143,6 +143,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/subjects/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteSubject(req.params.id);
+      if (success) {
+        res.json({ message: "Subject deleted successfully" });
+      } else {
+        res.status(404).json({ error: "Subject not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting subject:", error);
+      res.status(500).json({ error: "Failed to delete subject" });
+    }
+  });
+
   app.post("/api/subjects", async (req, res) => {
     try {
       const validatedData = insertSubjectSchema.parse(req.body);
