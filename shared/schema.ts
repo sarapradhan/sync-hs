@@ -6,9 +6,11 @@ import { z } from "zod";
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  email: text("email"),
+  email: text("email").unique(),
   avatar: text("avatar"),
+  googleId: text("google_id").unique(),
   createdAt: timestamp("created_at").default(sql`now()`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`now()`).notNull(),
 });
 
 export const assignments = pgTable("assignments", {
@@ -38,7 +40,10 @@ export const subjects = pgTable("subjects", {
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
+  updatedAt: true,
 });
+
+export const updateUserSchema = insertUserSchema.partial();
 
 export const insertAssignmentSchema = createInsertSchema(assignments).omit({
   id: true,
@@ -59,6 +64,7 @@ export const insertSubjectSchema = createInsertSchema(subjects).omit({
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = z.infer<typeof updateUserSchema>;
 export type Assignment = typeof assignments.$inferSelect;
 export type InsertAssignment = z.infer<typeof insertAssignmentSchema>;
 export type UpdateAssignment = z.infer<typeof updateAssignmentSchema>;

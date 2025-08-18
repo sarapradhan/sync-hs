@@ -1,54 +1,29 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth, requireAuth } from "./auth";
 import { insertAssignmentSchema, updateAssignmentSchema, insertSubjectSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // User routes
-  app.get("/api/users", async (req, res) => {
-    try {
-      const users = await storage.getUsers();
-      res.json(users);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
+  // Setup authentication
+  setupAuth(app);
 
-  app.get("/api/users/current", async (req, res) => {
-    try {
-      const user = await storage.getCurrentUser();
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch current user" });
-    }
-  });
+  // Auth routes are now handled in setupAuth
 
-  app.post("/api/users/switch", async (req, res) => {
-    try {
-      const { userId } = req.body;
-      if (!userId) {
-        return res.status(400).json({ message: "User ID is required" });
-      }
-      const user = await storage.switchUser(userId);
-      res.json(user);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to switch user" });
-    }
-  });
-
-  // Assignment routes
-  app.get("/api/assignments", async (req, res) => {
+  // Assignment routes (protected)
+  app.get("/api/assignments", requireAuth, async (req: any, res) => {
     try {
       const { status, subject } = req.query;
+      const userId = req.user.id;
       
       let assignments;
       if (status && typeof status === 'string') {
-        assignments = await storage.getAssignmentsByStatus(status);
+        assignments = await storage.getAssignmentsByStatus(status, userId);
       } else if (subject && typeof subject === 'string') {
-        assignments = await storage.getAssignmentsBySubject(subject);
+        assignments = await storage.getAssignmentsBySubject(subject, userId);
       } else {
-        assignments = await storage.getAssignments();
+        assignments = await storage.getAssignments(userId);
       }
       
       res.json(assignments);
@@ -57,17 +32,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/assignments/upcoming", async (req, res) => {
+  app.get("/api/assignments/upcoming", requireAuth, async (req: any, res) => {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
-      const assignments = await storage.getUpcomingAssignments(limit);
+      const userId = req.user.id;
+      const assignments = await storage.getUpcomingAssignments(limit, userId);
       res.json(assignments);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch upcoming assignments" });
     }
   });
 
-  app.get("/api/assignments/:id", async (req, res) => {
+  app.get("/api/assignments/:id", requireAuth, async (req, res) => {
     try {
       const assignment = await storage.getAssignment(req.params.id);
       if (!assignment) {
@@ -79,9 +55,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/assignments", async (req, res) => {
+  app.post("/api/assignments", requireAuth, async (req: any, res) => {
     try {
-      const validatedData = insertAssignmentSchema.parse(req.body);
+      const validatedData = insertAssignmentSchema.parse({
+        ...req.body,
+        userId: req.user.id
+      });
       const assignment = await storage.createAssignment(validatedData);
       res.status(201).json(assignment);
     } catch (error) {
@@ -92,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/assignments/:id", async (req, res) => {
+  app.put("/api/assignments/:id", requireAuth, async (req, res) => {
     try {
       const validatedData = updateAssignmentSchema.parse(req.body);
       const assignment = await storage.updateAssignment(req.params.id, validatedData);
@@ -108,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/assignments/:id", async (req, res) => {
+  app.delete("/api/assignments/:id", requireAuth, async (req, res) => {
     try {
       const deleted = await storage.deleteAssignment(req.params.id);
       if (!deleted) {
@@ -144,9 +123,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stats endpoint
-  app.get("/api/stats", async (req, res) => {
+  app.get("/api/stats", requireAuth, async (req: any, res) => {
     try {
-      const assignments = await storage.getAssignments();
+      const userId = req.user.id;
+      const assignments = await storage.getAssignments(userId);
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);

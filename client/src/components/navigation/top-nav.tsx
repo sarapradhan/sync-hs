@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { MATERIAL_ICONS } from "@/lib/constants";
 import { apiRequest } from "@/lib/queryClient";
-import type { User } from "@shared/schema";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TopNavProps {
   onAddAssignment: () => void;
@@ -17,30 +17,20 @@ export function TopNav({ onAddAssignment }: TopNavProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: currentUser } = useQuery({
-    queryKey: ["/api/users/current"],
-  });
+  const { user } = useAuth();
 
-  const { data: users = [] } = useQuery({
-    queryKey: ["/api/users"],
-  });
-
-  const switchUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      const response = await apiRequest("POST", "/api/users/switch", { userId });
-      return response.json();
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/auth/logout", {});
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/current"] });
+      queryClient.clear();
+      window.location.href = '/login';
     },
   });
 
-  const handleUserSwitch = (userId: string) => {
-    if (userId !== (currentUser as any)?.id) {
-      switchUserMutation.mutate(userId);
-    }
+  const handleLogout = () => {
+    logoutMutation.mutate();
   };
 
   const navItems = [
@@ -82,48 +72,30 @@ export function TopNav({ onAddAssignment }: TopNavProps) {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            {/* User Switcher */}
-            <Select 
-              value={(currentUser as any)?.id || ""} 
-              onValueChange={handleUserSwitch}
-            >
-              <SelectTrigger className="w-auto bg-transparent border-none text-white hover:bg-material-blue-500 focus:ring-0 focus:ring-offset-0">
-                <div className="flex items-center space-x-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center space-x-2 p-2 rounded-full hover:bg-material-blue-500 transition-colors text-white hover:text-white"
+                  data-testid="button-user-menu"
+                >
                   <Avatar className="w-8 h-8 bg-material-green-500">
                     <AvatarFallback className="text-white text-sm font-medium">
-                      {(currentUser as any)?.name?.slice(0, 2).toUpperCase() || "??"}
+                      {(user as any)?.name?.slice(0, 2).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                   <span className="hidden sm:block text-sm" data-testid="text-username">
-                    {(currentUser as any)?.name || "Loading..."}
+                    {(user as any)?.name || "User"}
                   </span>
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                {(users as User[]).map((user: User) => (
-                  <SelectItem key={user.id} value={user.id}>
-                    <div className="flex items-center space-x-2">
-                      <Avatar className="w-6 h-6 bg-material-green-500">
-                        <AvatarFallback className="text-white text-xs font-medium">
-                          {user.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{user.name}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="p-2 rounded-full hover:bg-material-blue-500 transition-colors text-white hover:text-white"
-              onClick={() => setShowNotifications(!showNotifications)}
-              data-testid="button-notifications"
-            >
-              <span className="material-icons">{MATERIAL_ICONS.notifications}</span>
-            </Button>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={handleLogout} data-testid="button-logout">
+                  <span className="material-icons mr-2 text-sm">{MATERIAL_ICONS.logout}</span>
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>

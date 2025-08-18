@@ -1,11 +1,13 @@
-import { type User, type InsertUser, type Assignment, type InsertAssignment, type UpdateAssignment, type Subject, type InsertSubject } from "@shared/schema";
+import { type User, type InsertUser, type UpdateUser, type Assignment, type InsertAssignment, type UpdateAssignment, type Subject, type InsertSubject } from "@shared/schema";
 import { randomUUID } from "crypto";
 
 export interface IStorage {
   // Users
   getUsers(): Promise<User[]>;
   getUser(id: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, user: UpdateUser): Promise<User>;
   getCurrentUser(): Promise<User>;
   switchUser(userId: string): Promise<User>;
   
@@ -52,14 +54,18 @@ export class MemStorage implements IStorage {
         name: "Zoo",
         email: "zoo@example.com",
         avatar: null,
+        googleId: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
       },
       {
         id: nishId,
         name: "Nish", 
         email: "nish@example.com",
         avatar: null,
+        googleId: null,
         createdAt: new Date(),
+        updatedAt: new Date(),
       },
     ];
 
@@ -123,7 +129,9 @@ export class MemStorage implements IStorage {
       id,
       email: insertUser.email || null,
       avatar: insertUser.avatar || null,
+      googleId: insertUser.googleId || null,
       createdAt: new Date(),
+      updatedAt: new Date(),
     };
     this.users.set(id, user);
     return user;
@@ -135,6 +143,24 @@ export class MemStorage implements IStorage {
       throw new Error("No current user found");
     }
     return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(user => user.email === email);
+  }
+
+  async updateUser(id: string, updateUser: UpdateUser): Promise<User> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) {
+      throw new Error("User not found");
+    }
+    const updatedUser: User = {
+      ...existingUser,
+      ...updateUser,
+      updatedAt: new Date(),
+    };
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   async switchUser(userId: string): Promise<User> {
@@ -168,6 +194,8 @@ export class MemStorage implements IStorage {
       description: insertAssignment.description || null,
       progress: insertAssignment.progress || 0,
       teacher: insertAssignment.teacher || null,
+      status: insertAssignment.status || "pending",
+      priority: insertAssignment.priority || "medium",
       createdAt: now,
       updatedAt: now,
       googleCalendarEventId: null,
