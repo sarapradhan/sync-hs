@@ -209,12 +209,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allowedTypes = [
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
         'application/vnd.ms-excel', // .xls
-        'text/csv' // .csv
+        'text/csv', // .csv
+        'text/plain', // Sometimes CSV files are detected as plain text
+        'application/csv', // Alternative CSV MIME type
+        'application/octet-stream' // Generic binary - check extension
       ];
-      if (allowedTypes.includes(file.mimetype)) {
+      
+      // Also check file extension as backup
+      const allowedExtensions = ['.xlsx', '.xls', '.csv'];
+      const hasValidExtension = allowedExtensions.some(ext => 
+        file.originalname.toLowerCase().endsWith(ext)
+      );
+      
+      if (allowedTypes.includes(file.mimetype) || hasValidExtension) {
         cb(null, true);
       } else {
-        cb(new Error('Only Excel (.xlsx, .xls) and CSV files are allowed'));
+        cb(new Error(`File type ${file.mimetype} not allowed. Only Excel (.xlsx, .xls) and CSV files are accepted.`));
       }
     }
   });
@@ -249,6 +259,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let assignmentsCreated = 0;
         const errors: string[] = [];
 
+        
         // Process each row
         for (const row of data as any[]) {
           try {
@@ -285,7 +296,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Enhanced date parsing
             let parsedDueDate: Date;
-            if (typeof dueDate === 'string') {
+            if (typeof dueDate === 'number') {
+              // Handle Excel serial date numbers (days since 1900-01-01)
+              parsedDueDate = new Date((dueDate - 25569) * 86400 * 1000);
+            } else if (typeof dueDate === 'string') {
               // Try multiple date formats
               const cleanDate = dueDate.trim();
               parsedDueDate = new Date(cleanDate);
