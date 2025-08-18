@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { MATERIAL_ICONS } from "@/lib/constants";
 import { SpreadsheetUploader } from "@/components/assignments/spreadsheet-uploader";
+import { DataManagement } from "@/components/ui/data-management";
 
 export function QuickActions() {
   const { toast } = useToast();
@@ -117,6 +118,11 @@ export function QuickActions() {
                 </div>
               </Button>
             ))}
+            
+            {/* Data Management Section */}
+            <div className="pt-3 border-t border-gray-200">
+              <DataManagement />
+            </div>
           </div>
         </CardContent>
       </Card>

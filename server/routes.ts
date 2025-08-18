@@ -18,6 +18,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data management routes
+  app.delete("/api/data/clear", async (req, res) => {
+    try {
+      await storage.clearAllData();
+      res.json({ message: "All data cleared successfully" });
+    } catch (error) {
+      console.error("Error clearing data:", error);
+      res.status(500).json({ error: "Failed to clear data" });
+    }
+  });
+
   app.get("/api/users/current", async (req, res) => {
     try {
       const user = await storage.getCurrentUser();
