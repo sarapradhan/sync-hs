@@ -281,8 +281,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                            row.COURSE || row.Class || row.class || row.CLASS;
             
             const dueDate = row['Due Date'] || row.DueDate || row['due date'] || row.dueDate || 
-                           row.DUE_DATE || row['Due'] || row.due || row.DUE || row.Date || row.date || 
-                           row.DATE || row.Deadline || row.deadline || row.DEADLINE;
+                           row.DUE_DATE || row['DUE Date'] || row['Due'] || row.due || row.DUE || 
+                           row.Date || row.date || row.DATE || row.Deadline || row.deadline || row.DEADLINE;
             
             const description = row.Description || row.description || row.DESCRIPTION || 
                                row.Details || row.details || row.DETAILS || row.Notes || row.notes || 
@@ -419,7 +419,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json({
           assignmentsCreated,
           errors: errors.length > 0 ? errors : undefined,
-          message: `Successfully imported ${assignmentsCreated} assignments`,
+          message: assignmentsCreated > 0 ? `Successfully imported ${assignmentsCreated} assignments` : 'No assignments were imported - check the errors below',
         });
 
       } catch (error: any) {

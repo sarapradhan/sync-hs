@@ -40,20 +40,36 @@ export function SpreadsheetUploader({ onSuccess, onClose }: SpreadsheetUploaderP
     onSuccess: (data) => {
       setIsProcessing(false);
       setUploadProgress(100);
-      setProcessingStatus(`✅ Successfully imported ${data.assignmentsCreated} assignments!`);
       
-      toast({
-        title: "Spreadsheet Imported Successfully!",
-        description: `Created ${data.assignmentsCreated} assignments from your spreadsheet.`,
-      });
+      if (data.assignmentsCreated > 0) {
+        setProcessingStatus(`✅ Successfully imported ${data.assignmentsCreated} assignments!`);
+        
+        toast({
+          title: "Spreadsheet Imported Successfully!",
+          description: `Created ${data.assignmentsCreated} assignments from your spreadsheet.`,
+        });
 
-      // Refresh all related data to update calendar and assignments
-      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/assignments/upcoming"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
-      
-      onSuccess?.();
+        // Refresh all related data to update calendar and assignments
+        queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/assignments/upcoming"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/subjects"] });
+        
+        onSuccess?.();
+      } else {
+        // Show errors when no assignments were created
+        const errorMessage = data.errors && data.errors.length > 0 
+          ? data.errors.slice(0, 3).join('; ')
+          : "No assignments were created. Check your spreadsheet format.";
+        
+        setProcessingStatus(`❌ ${errorMessage}`);
+        
+        toast({
+          title: "Import Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     },
     onError: (error: any) => {
       setIsProcessing(false);
