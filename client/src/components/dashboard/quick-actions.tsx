@@ -68,8 +68,8 @@ export function QuickActions() {
       disabled: importCalendarMutation.isPending,
     },
     {
-      title: "📊 Upload Spreadsheet",
-      description: "Import assignments from Excel/CSV files",
+      title: "Import Spreadsheet",
+      description: "Upload Excel/CSV to create assignments",
       icon: MATERIAL_ICONS.upload,
       bgColor: "bg-green-500 bg-opacity-10",
       iconColor: "text-green-500",
