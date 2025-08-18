@@ -5,16 +5,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TopNav } from "@/components/navigation/top-nav";
 import { MobileNav } from "@/components/navigation/mobile-nav";
-import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Assignments from "@/pages/assignments";
 import Calendar from "@/pages/calendar";
-import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
 import { AssignmentForm } from "@/components/assignments/assignment-form";
 
-function AuthenticatedRouter() {
+function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -25,17 +23,7 @@ function AuthenticatedRouter() {
   );
 }
 
-function UnauthenticatedRouter() {
-  return (
-    <Switch>
-      <Route path="/login" component={Login} />
-      <Route component={Login} />
-    </Switch>
-  );
-}
-
-function AppContent() {
-  const { isAuthenticated, isLoading } = useAuth();
+function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleOpenForm = () => {
@@ -46,43 +34,18 @@ function AppContent() {
     setIsFormOpen(false);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-material-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <UnauthenticatedRouter />
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 font-roboto">
-      <TopNav onAddAssignment={handleOpenForm} />
-      <AuthenticatedRouter />
-      <MobileNav />
-      <AssignmentForm 
-        open={isFormOpen} 
-        onClose={handleCloseForm} 
-      />
-    </div>
-  );
-}
-
-function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppContent />
+        <div className="min-h-screen bg-gray-50 font-roboto">
+          <TopNav onAddAssignment={handleOpenForm} />
+          <Router />
+          <MobileNav />
+          <AssignmentForm 
+            open={isFormOpen} 
+            onClose={handleCloseForm} 
+          />
+        </div>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

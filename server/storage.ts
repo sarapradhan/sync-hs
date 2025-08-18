@@ -12,14 +12,14 @@ export interface IStorage {
   switchUser(userId: string): Promise<User>;
   
   // Assignments
-  getAssignments(userId?: string): Promise<Assignment[]>;
+  getAssignments(): Promise<Assignment[]>;
   getAssignment(id: string): Promise<Assignment | undefined>;
   createAssignment(assignment: InsertAssignment): Promise<Assignment>;
   updateAssignment(id: string, assignment: UpdateAssignment): Promise<Assignment | undefined>;
   deleteAssignment(id: string): Promise<boolean>;
-  getAssignmentsByStatus(status: string, userId?: string): Promise<Assignment[]>;
-  getAssignmentsBySubject(subject: string, userId?: string): Promise<Assignment[]>;
-  getUpcomingAssignments(limit?: number, userId?: string): Promise<Assignment[]>;
+  getAssignmentsByStatus(status: string): Promise<Assignment[]>;
+  getAssignmentsBySubject(subject: string): Promise<Assignment[]>;
+  getUpcomingAssignments(limit?: number): Promise<Assignment[]>;
   
   // Subjects
   getSubjects(): Promise<Subject[]>;
@@ -173,10 +173,9 @@ export class MemStorage implements IStorage {
   }
 
   // Assignment methods
-  async getAssignments(userId?: string): Promise<Assignment[]> {
-    const targetUserId = userId || this.currentUserId;
+  async getAssignments(): Promise<Assignment[]> {
     return Array.from(this.assignments.values())
-      .filter(a => a.userId === targetUserId)
+      .filter(a => a.userId === this.currentUserId)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
   }
 
@@ -221,23 +220,20 @@ export class MemStorage implements IStorage {
     return this.assignments.delete(id);
   }
 
-  async getAssignmentsByStatus(status: string, userId?: string): Promise<Assignment[]> {
-    const targetUserId = userId || this.currentUserId;
+  async getAssignmentsByStatus(status: string): Promise<Assignment[]> {
     return Array.from(this.assignments.values())
-      .filter(a => a.status === status && a.userId === targetUserId);
+      .filter(a => a.status === status && a.userId === this.currentUserId);
   }
 
-  async getAssignmentsBySubject(subject: string, userId?: string): Promise<Assignment[]> {
-    const targetUserId = userId || this.currentUserId;
+  async getAssignmentsBySubject(subject: string): Promise<Assignment[]> {
     return Array.from(this.assignments.values())
-      .filter(a => a.subject === subject && a.userId === targetUserId);
+      .filter(a => a.subject === subject && a.userId === this.currentUserId);
   }
 
-  async getUpcomingAssignments(limit = 10, userId?: string): Promise<Assignment[]> {
-    const targetUserId = userId || this.currentUserId;
+  async getUpcomingAssignments(limit = 10): Promise<Assignment[]> {
     const now = new Date();
     return Array.from(this.assignments.values())
-      .filter(a => new Date(a.dueDate) >= now && a.status !== 'completed' && a.userId === targetUserId)
+      .filter(a => new Date(a.dueDate) >= now && a.status !== 'completed' && a.userId === this.currentUserId)
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
       .slice(0, limit);
   }
