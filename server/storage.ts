@@ -9,6 +9,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: string, user: UpdateUser): Promise<User>;
   getCurrentUser(): Promise<User>;
+  getCurrentUserId(): string;
   switchUser(userId: string): Promise<User>;
   
   // Assignments
@@ -20,6 +21,7 @@ export interface IStorage {
   getAssignmentsByStatus(status: string): Promise<Assignment[]>;
   getAssignmentsBySubject(subject: string): Promise<Assignment[]>;
   getUpcomingAssignments(limit?: number): Promise<Assignment[]>;
+  clearAllAssignments(): Promise<void>;
   
   // Subjects
   getSubjects(): Promise<Subject[]>;
@@ -250,6 +252,10 @@ export class MemStorage implements IStorage {
 
   async clearAllAssignments(): Promise<void> {
     this.assignments.clear();
+  }
+
+  getCurrentUserId(): string {
+    return this.currentUserId;
   }
 
   async getAssignmentsByStatus(status: string): Promise<Assignment[]> {
