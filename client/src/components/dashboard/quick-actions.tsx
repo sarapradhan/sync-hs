@@ -58,7 +58,7 @@ export function QuickActions() {
 
   const actions = [
     {
-      title: "Import from Google Calendar",
+      title: "📅 Import from Google Calendar",
       description: "Sync your existing events",
       icon: MATERIAL_ICONS.calendar,
       bgColor: "bg-blue-500 bg-opacity-10",
@@ -68,8 +68,8 @@ export function QuickActions() {
       disabled: importCalendarMutation.isPending,
     },
     {
-      title: "Import Spreadsheet",
-      description: "Upload Excel/CSV to create assignments",
+      title: "📊 Import Assignment Files",
+      description: "Upload Excel/CSV files with your assignments",
       icon: MATERIAL_ICONS.upload,
       bgColor: "bg-green-500 bg-opacity-10",
       iconColor: "text-green-500",
@@ -78,7 +78,7 @@ export function QuickActions() {
       disabled: false,
     },
     {
-      title: "Export to Google Sheets",
+      title: "📤 Export to Google Sheets",
       description: "Download your schedule",
       icon: MATERIAL_ICONS.export,
       bgColor: "bg-orange-500 bg-opacity-10",
@@ -93,7 +93,7 @@ export function QuickActions() {
     <>
       <Card className="shadow-material-1" data-testid="quick-actions">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-gray-900">Quick Actions (Updated)</CardTitle>
+          <CardTitle className="text-lg font-medium text-gray-900">Quick Actions - v2.0</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

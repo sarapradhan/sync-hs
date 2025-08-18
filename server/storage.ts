@@ -83,34 +83,55 @@ export class MemStorage implements IStorage {
     // Set Zoo as the current user by default
     this.currentUserId = zooId;
 
-    // Create default subjects
+    // Create default subjects based on user's course list
     const defaultSubjects: Subject[] = [
       {
         id: randomUUID(),
-        name: "Mathematics",
+        name: "French V",
+        color: "#E91E63",
+        teacher: "Mme. Dubois",
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: "French V Honors",
+        color: "#C2185B",
+        teacher: "Mme. Laurent",
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: "AP Physics",
         color: "#2196F3",
-        teacher: "Mr. Johnson",
+        teacher: "Dr. Newton",
         createdAt: new Date(),
       },
       {
         id: randomUUID(),
-        name: "English",
+        name: "AP Biology",
         color: "#4CAF50",
-        teacher: "Ms. Davis",
+        teacher: "Dr. Darwin",
         createdAt: new Date(),
       },
       {
         id: randomUUID(),
-        name: "Science",
+        name: "AP Calc BC",
         color: "#FF9800",
-        teacher: "Dr. Smith",
+        teacher: "Mr. Euler",
         createdAt: new Date(),
       },
       {
         id: randomUUID(),
-        name: "History",
+        name: "AP Lang",
         color: "#9C27B0",
-        teacher: "Mr. Wilson",
+        teacher: "Ms. Shakespeare",
+        createdAt: new Date(),
+      },
+      {
+        id: randomUUID(),
+        name: "US History",
+        color: "#607D8B",
+        teacher: "Mr. Lincoln",
         createdAt: new Date(),
       },
     ];
