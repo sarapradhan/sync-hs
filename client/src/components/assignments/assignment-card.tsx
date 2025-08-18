@@ -5,15 +5,17 @@ import { Progress } from "@/components/ui/progress";
 import { MATERIAL_ICONS, PRIORITY_COLORS, SUBJECT_COLORS } from "@/lib/constants";
 import { formatDueDate, getDueDateColor } from "@/lib/dates";
 import type { Assignment } from "@shared/schema";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface AssignmentCardProps {
   assignment: Assignment;
   onEdit: (assignment: Assignment) => void;
   onToggleComplete: (assignment: Assignment) => void;
+  onDelete?: (assignment: Assignment) => void;
   onClick?: (assignment: Assignment) => void;
 }
 
-export function AssignmentCard({ assignment, onEdit, onToggleComplete, onClick }: AssignmentCardProps) {
+export function AssignmentCard({ assignment, onEdit, onToggleComplete, onDelete, onClick }: AssignmentCardProps) {
   const priorityStyle = PRIORITY_COLORS[assignment.priority];
   const subjectStyle = SUBJECT_COLORS[assignment.subject as keyof typeof SUBJECT_COLORS] || SUBJECT_COLORS.Other;
   const dueDateColor = getDueDateColor(new Date(assignment.dueDate));
@@ -32,6 +34,13 @@ export function AssignmentCard({ assignment, onEdit, onToggleComplete, onClick }
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleComplete(assignment);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(assignment);
+    }
   };
 
   return (
@@ -99,6 +108,38 @@ export function AssignmentCard({ assignment, onEdit, onToggleComplete, onClick }
             >
               <span className="material-icons text-sm text-gray-400">{MATERIAL_ICONS.check}</span>
             </Button>
+            {onDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="p-2 hover:bg-red-100 rounded-md transition-colors"
+                    data-testid={`button-delete-assignment-${assignment.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <span className="material-icons text-sm text-red-400">{MATERIAL_ICONS.delete}</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Assignment</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{assignment.title}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={handleDelete}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         </div>
         {assignment.progress !== null && assignment.progress !== undefined && assignment.progress > 0 && (

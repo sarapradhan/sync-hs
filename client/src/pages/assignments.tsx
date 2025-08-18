@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { AssignmentForm } from "@/components/assignments/assignment-form";
 import { FloatingActionButton } from "@/components/ui/floating-action-button";
 import { MATERIAL_ICONS } from "@/lib/constants";
 import type { Assignment } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export default function Assignments() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -16,6 +19,8 @@ export default function Assignments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [subjectFilter, setSubjectFilter] = useState("all");
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: assignments = [], isLoading } = useQuery({
     queryKey: ["/api/assignments"],
@@ -23,6 +28,50 @@ export default function Assignments() {
 
   const { data: subjects = [] } = useQuery({
     queryKey: ["/api/subjects"],
+  });
+
+  // Delete single assignment mutation
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      await apiRequest("DELETE", `/api/assignments/${assignmentId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Assignment Deleted",
+        description: "Assignment has been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete assignment. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Clear all assignments mutation
+  const clearAllAssignmentsMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", "/api/assignments", {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "All Assignments Cleared",
+        description: "All assignments have been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Clear Failed",
+        description: "Failed to clear assignments. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const filteredAssignments = (assignments as Assignment[]).filter((assignment: Assignment) => {
@@ -44,6 +93,14 @@ export default function Assignments() {
   const handleToggleComplete = async (assignment: Assignment) => {
     // This would be implemented with a mutation
     console.log("Toggle complete for:", assignment.id);
+  };
+
+  const handleDelete = (assignment: Assignment) => {
+    deleteAssignmentMutation.mutate(assignment.id);
+  };
+
+  const handleClearAll = () => {
+    clearAllAssignmentsMutation.mutate();
   };
 
   const handleOpenForm = () => {
@@ -121,10 +178,43 @@ export default function Assignments() {
                   </SelectContent>
                 </Select>
                 
-                <Button onClick={handleOpenForm} data-testid="button-add-assignment">
-                  <span className="material-icons text-sm mr-2">{MATERIAL_ICONS.add}</span>
-                  Add Assignment
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleOpenForm} data-testid="button-add-assignment">
+                    <span className="material-icons text-sm mr-2">{MATERIAL_ICONS.add}</span>
+                    Add Assignment
+                  </Button>
+                  {(assignments as Assignment[]).length > 0 && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          data-testid="button-clear-all-assignments"
+                          disabled={clearAllAssignmentsMutation.isPending}
+                        >
+                          <span className="material-icons text-sm mr-2">{MATERIAL_ICONS.delete}</span>
+                          Clear All
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Clear All Assignments</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete all assignments? This action cannot be undone and will remove all {(assignments as Assignment[]).length} assignments.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleClearAll}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Clear All Assignments
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -154,6 +244,7 @@ export default function Assignments() {
                   assignment={assignment}
                   onEdit={handleEdit}
                   onToggleComplete={handleToggleComplete}
+                  onDelete={handleDelete}
                 />
               ))
             )}

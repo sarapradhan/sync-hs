@@ -31,7 +31,7 @@ export function DataManagement() {
   const queryClient = useQueryClient();
 
   const clearDataMutation = useMutation({
-    mutationFn: () => apiRequest("/api/data/clear", "DELETE"),
+    mutationFn: () => apiRequest("DELETE", "/api/data/clear", {}),
     onSuccess: () => {
       toast({
         title: "Data Cleared",

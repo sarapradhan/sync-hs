@@ -4,8 +4,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { SubjectBadge } from "@/components/ui/subject-badge";
 import { SubjectDot } from "@/components/ui/subject-dot";
-import { CheckCircle2, Clock, AlertTriangle, Calendar } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, Calendar, Trash2 } from "lucide-react";
 import type { Assignment } from "@shared/schema";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import { MATERIAL_ICONS } from "@/lib/constants";
 
 interface AssignmentSummary extends Assignment {
   daysUntilDue: number;
@@ -14,6 +20,30 @@ interface AssignmentSummary extends Assignment {
 export function SummaryView() {
   const { data: assignments = [], isLoading } = useQuery<Assignment[]>({
     queryKey: ["/api/assignments"],
+  });
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  // Delete single assignment mutation
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      await apiRequest("DELETE", `/api/assignments/${assignmentId}`, {});
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats"] });
+      toast({
+        title: "Assignment Deleted",
+        description: "Assignment has been successfully deleted.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Delete Failed",
+        description: "Failed to delete assignment. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (isLoading) {
@@ -260,12 +290,13 @@ export function SummaryView() {
                   <th className="text-left py-3 px-2">Points Earned/Possible</th>
                   <th className="text-left py-3 px-2">Grade</th>
                   <th className="text-left py-3 px-2">Days Until</th>
+                  <th className="text-center py-3 px-2">Actions</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {sortedAssignments.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-8 text-gray-500">
+                    <td colSpan={10} className="text-center py-8 text-gray-500">
                       No assignments found. Upload a spreadsheet or create assignments to see them here.
                     </td>
                   </tr>
@@ -344,6 +375,40 @@ export function SummaryView() {
                               {daysUntil > 0 ? `${daysUntil}d` : daysUntil === 0 ? 'Today' : `${Math.abs(daysUntil)}d ago`}
                             </span>
                           </div>
+                        </td>
+                        {/* Actions */}
+                        <td className="py-3 px-2 text-center">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-red-50"
+                                data-testid={`button-delete-summary-${assignment.id}`}
+                              >
+                                <span className="material-icons text-sm text-red-400 hover:text-red-600">
+                                  {MATERIAL_ICONS.delete}
+                                </span>
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Assignment</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{assignment.title}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => deleteAssignmentMutation.mutate(assignment.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </td>
                       </tr>
                     );
