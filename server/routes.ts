@@ -219,8 +219,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create upload log
+      const currentUser = await storage.getCurrentUser();
       const uploadLog = await storage.createUploadLog({
-        userId: storage.getCurrentUserId(),
+        userId: currentUser.id,
         filename,
         status: "processing",
       });
@@ -350,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Create assignment with all parsed data
             const assignmentData = {
-              userId: storage.getCurrentUserId(),
+              userId: currentUser.id,
               title: String(title).trim(),
               subject: String(subject).trim(),
               description: String(description).trim(),

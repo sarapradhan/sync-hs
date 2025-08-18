@@ -315,11 +315,11 @@ export class MemStorage implements IStorage {
     const uploadLog: UploadLog = {
       ...insertUploadLog,
       id,
-      userId: this.currentUserId,
       uploadedAt: new Date(),
-      processedAt: null,
-      assignmentsCreated: 0,
-      errorMessage: null,
+      processedAt: insertUploadLog.processedAt || null,
+      status: insertUploadLog.status || "pending",
+      assignmentsCreated: insertUploadLog.assignmentsCreated || 0,
+      errorMessage: insertUploadLog.errorMessage || null,
     };
     this.uploadLogs.set(id, uploadLog);
     return uploadLog;
