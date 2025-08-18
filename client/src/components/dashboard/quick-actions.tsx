@@ -68,8 +68,8 @@ export function QuickActions() {
       disabled: importCalendarMutation.isPending,
     },
     {
-      title: "Upload Spreadsheet",
-      description: "Import assignments from Excel/CSV",
+      title: "📊 Upload Spreadsheet",
+      description: "Import assignments from Excel/CSV files",
       icon: MATERIAL_ICONS.upload,
       bgColor: "bg-green-500 bg-opacity-10",
       iconColor: "text-green-500",
@@ -93,7 +93,7 @@ export function QuickActions() {
     <>
       <Card className="shadow-material-1" data-testid="quick-actions">
         <CardHeader>
-          <CardTitle className="text-lg font-medium text-gray-900">Quick Actions</CardTitle>
+          <CardTitle className="text-lg font-medium text-gray-900">Quick Actions (Updated)</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
