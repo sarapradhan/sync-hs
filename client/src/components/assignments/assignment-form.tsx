@@ -10,10 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { insertAssignmentSchema, type InsertAssignment, type Assignment } from "@shared/schema";
+import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MATERIAL_ICONS } from "@/lib/constants";
 import { format } from "date-fns";
+import { Calendar } from "lucide-react";
 
 interface AssignmentFormProps {
   open: boolean;
@@ -30,14 +32,23 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
     queryKey: ["/api/subjects"],
   });
 
+  // Check calendar connection status
+  const { data: calendarStatus } = useQuery({
+    queryKey: ["/api/calendar/status"],
+  });
+
   // Create a simplified form with only the 3 essential fields
   const simplifiedSchema = insertAssignmentSchema.pick({
     subject: true,
     title: true,
     dueDate: true,
+  }).extend({
+    dueDate: z.string(),
   });
 
-  const form = useForm<Pick<InsertAssignment, 'subject' | 'title' | 'dueDate'>>({
+  type FormData = z.infer<typeof simplifiedSchema>;
+
+  const form = useForm<FormData>({
     resolver: zodResolver(simplifiedSchema),
     defaultValues: {
       subject: assignment?.subject || "",
@@ -47,7 +58,7 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: InsertAssignment) => {
+    mutationFn: async (data: InsertAssignment & { syncToCalendar?: boolean }) => {
       const response = await apiRequest("POST", "/api/assignments", data);
       return response.json();
     },
@@ -98,11 +109,13 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
     onClose();
   };
 
-  const onSubmit = (data: InsertAssignment) => {
+  const onSubmit = (data: FormData) => {
     // Add default values for fields not included in the simplified form
-    const submissionData: InsertAssignment = {
-      ...data,
-      dueDate: new Date(data.dueDate as string),
+    const submissionData: InsertAssignment & { syncToCalendar?: boolean } = {
+      userId: "", // Will be set by the backend
+      title: data.title,
+      subject: data.subject,
+      dueDate: new Date(data.dueDate),
       description: "", // Default empty description
       priority: "medium", // Default medium priority
       status: "pending", // Default pending status
@@ -111,8 +124,7 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
       type: "homework", // Default homework type
       pointsEarned: null, // Default no points earned yet
       pointsPossible: 100, // Default 100 points possible
-      googleCalendarEventId: null, // Default no calendar sync
-      userId: "" // Will be set by the backend
+      syncToCalendar: syncCalendar // Include calendar sync preference
     };
 
     if (assignment) {
@@ -157,7 +169,7 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {subjects.map((subject) => (
+                      {(subjects as any[]).map((subject: any) => (
                         <SelectItem key={subject.id} value={subject.name}>
                           {subject.name}
                         </SelectItem>
@@ -206,6 +218,25 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
                 </FormItem>
               )}
             />
+
+            {/* Calendar Sync Checkbox - Only show for new assignments if calendar is connected */}
+            {!assignment && (calendarStatus as any)?.connected && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="sync-calendar"
+                  checked={syncCalendar}
+                  onCheckedChange={(checked) => setSyncCalendar(!!checked)}
+                  data-testid="checkbox-sync-calendar"
+                />
+                <label 
+                  htmlFor="sync-calendar" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Sync to Google Calendar
+                </label>
+              </div>
+            )}
             
             <div className="flex justify-end space-x-3 pt-4">
               <Button 

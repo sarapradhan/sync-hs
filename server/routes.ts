@@ -5,6 +5,8 @@ import { insertAssignmentSchema, updateAssignmentSchema, insertSubjectSchema } f
 import { ObjectStorageService } from "./objectStorage";
 import { z } from "zod";
 import * as XLSX from "xlsx";
+import { calendarService } from "./calendar";
+import { userCalendarTokens } from "./userCalendarTokens";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -96,7 +98,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/assignments", async (req, res) => {
     try {
       const validatedData = insertAssignmentSchema.parse(req.body);
+      const { syncToCalendar } = req.body;
+      
+      // Create the assignment first
       const assignment = await storage.createAssignment(validatedData);
+      
+      // If calendar sync is requested and user has tokens, create calendar event
+      if (syncToCalendar) {
+        const currentUser = await storage.getCurrentUser();
+        const userTokens = userCalendarTokens.getTokens(currentUser.id);
+        
+        if (userTokens) {
+          const eventId = await calendarService.createAssignmentEvent(assignment, userTokens);
+          if (eventId) {
+            // Update assignment with calendar event ID
+            await storage.updateAssignment(assignment.id, { googleCalendarEventId: eventId });
+            assignment.googleCalendarEventId = eventId;
+          }
+        }
+      }
+      
       res.status(201).json(assignment);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -113,6 +134,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!assignment) {
         return res.status(404).json({ message: "Assignment not found" });
       }
+      
+      // If assignment has a calendar event, update it
+      if (assignment.googleCalendarEventId) {
+        const currentUser = await storage.getCurrentUser();
+        const userTokens = userCalendarTokens.getTokens(currentUser.id);
+        
+        if (userTokens) {
+          await calendarService.updateAssignmentEvent(
+            assignment.googleCalendarEventId, 
+            assignment, 
+            userTokens
+          );
+        }
+      }
+      
       res.json(assignment);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -124,10 +160,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/assignments/:id", async (req, res) => {
     try {
+      // Get assignment first to check for calendar event
+      const assignment = await storage.getAssignment(req.params.id);
+      
       const deleted = await storage.deleteAssignment(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: "Assignment not found" });
       }
+      
+      // If assignment had a calendar event, delete it
+      if (assignment?.googleCalendarEventId) {
+        const currentUser = await storage.getCurrentUser();
+        const userTokens = userCalendarTokens.getTokens(currentUser.id);
+        
+        if (userTokens) {
+          await calendarService.deleteAssignmentEvent(
+            assignment.googleCalendarEventId, 
+            userTokens
+          );
+        }
+      }
+      
       res.status(204).send();
     } catch (error) {
       res.status(500).json({ message: "Failed to delete assignment" });
@@ -481,6 +534,97 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to process spreadsheet", 
         error: error.message 
       });
+    }
+  });
+
+  // Google Calendar Authentication Routes
+  app.get("/auth/google/calendar", async (req, res) => {
+    try {
+      const authUrl = calendarService.getAuthUrl();
+      res.redirect(authUrl);
+    } catch (error) {
+      console.error("Error getting Google auth URL:", error);
+      res.status(500).json({ error: "Failed to initiate Google Calendar authentication" });
+    }
+  });
+
+  app.get("/auth/google/callback", async (req, res) => {
+    try {
+      const { code } = req.query;
+      if (!code || typeof code !== 'string') {
+        return res.status(400).json({ error: "Authorization code is required" });
+      }
+
+      const tokens = await calendarService.getTokens(code);
+      const currentUser = await storage.getCurrentUser();
+      
+      // Store the tokens for the current user
+      userCalendarTokens.setTokens(currentUser.id, tokens);
+
+      // Redirect to frontend with success message
+      res.redirect(`/?calendar=connected`);
+    } catch (error) {
+      console.error("Error during Google Calendar OAuth callback:", error);
+      res.redirect(`/?calendar=error`);
+    }
+  });
+
+  // Calendar status and management routes
+  app.get("/api/calendar/status", async (req, res) => {
+    try {
+      const currentUser = await storage.getCurrentUser();
+      const hasTokens = userCalendarTokens.hasTokens(currentUser.id);
+      
+      res.json({ 
+        connected: hasTokens,
+        userId: currentUser.id 
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to check calendar status" });
+    }
+  });
+
+  app.post("/api/calendar/disconnect", async (req, res) => {
+    try {
+      const currentUser = await storage.getCurrentUser();
+      userCalendarTokens.removeTokens(currentUser.id);
+      
+      res.json({ message: "Google Calendar disconnected successfully" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to disconnect calendar" });
+    }
+  });
+
+  app.post("/api/assignments/sync-calendar", async (req, res) => {
+    try {
+      const currentUser = await storage.getCurrentUser();
+      const userTokens = userCalendarTokens.getTokens(currentUser.id);
+      
+      if (!userTokens) {
+        return res.status(401).json({ error: "Google Calendar not connected" });
+      }
+
+      const assignments = await storage.getAssignments();
+      const unsyncedAssignments = assignments.filter(a => !a.googleCalendarEventId);
+      
+      let syncedCount = 0;
+      
+      for (const assignment of unsyncedAssignments) {
+        const eventId = await calendarService.createAssignmentEvent(assignment, userTokens);
+        if (eventId) {
+          await storage.updateAssignment(assignment.id, { googleCalendarEventId: eventId });
+          syncedCount++;
+        }
+      }
+
+      res.json({ 
+        message: `Successfully synced ${syncedCount} assignments to Google Calendar`,
+        syncedCount,
+        totalAssignments: unsyncedAssignments.length
+      });
+    } catch (error) {
+      console.error("Error syncing assignments to calendar:", error);
+      res.status(500).json({ error: "Failed to sync assignments to calendar" });
     }
   });
 
