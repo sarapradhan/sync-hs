@@ -30,18 +30,19 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
     queryKey: ["/api/subjects"],
   });
 
-  const form = useForm<InsertAssignment>({
-    resolver: zodResolver(insertAssignmentSchema),
+  // Create a simplified form with only the 3 essential fields
+  const simplifiedSchema = insertAssignmentSchema.pick({
+    subject: true,
+    title: true,
+    dueDate: true,
+  });
+
+  const form = useForm<Pick<InsertAssignment, 'subject' | 'title' | 'dueDate'>>({
+    resolver: zodResolver(simplifiedSchema),
     defaultValues: {
-      title: assignment?.title || "",
-      description: assignment?.description || "",
       subject: assignment?.subject || "",
+      title: assignment?.title || "",
       dueDate: assignment ? format(new Date(assignment.dueDate), "yyyy-MM-dd'T'HH:mm") : format(new Date(), "yyyy-MM-dd'T'23:59"),
-      priority: assignment?.priority || "medium",
-      status: assignment?.status || "pending",
-      progress: assignment?.progress || 0,
-      teacher: assignment?.teacher || "",
-      userId: ""
     },
   });
 
@@ -98,10 +99,26 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
   };
 
   const onSubmit = (data: InsertAssignment) => {
+    // Add default values for fields not included in the simplified form
+    const submissionData: InsertAssignment = {
+      ...data,
+      dueDate: new Date(data.dueDate as string),
+      description: "", // Default empty description
+      priority: "medium", // Default medium priority
+      status: "pending", // Default pending status
+      progress: 0, // Default 0% progress
+      teacher: "", // Default empty teacher
+      type: "homework", // Default homework type
+      pointsEarned: null, // Default no points earned yet
+      pointsPossible: 100, // Default 100 points possible
+      googleCalendarEventId: null, // Default no calendar sync
+      userId: "" // Will be set by the backend
+    };
+
     if (assignment) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(submissionData);
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(submissionData);
     }
   };
 
@@ -126,24 +143,7 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Assignment Title</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter assignment title" 
-                      {...field} 
-                      data-testid="input-assignment-title"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+            {/* Subject - First Field */}
             <FormField
               control={form.control}
               name="subject"
@@ -169,79 +169,18 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
               )}
             />
             
+            {/* Assignment Title - Second Field */}
             <FormField
               control={form.control}
-              name="description"
+              name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Assignment details..." 
-                      rows={3} 
-                      {...field} 
-                      data-testid="textarea-description"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Due Date & Time</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="datetime-local" 
-                        {...field}
-                        data-testid="input-due-date"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-priority">
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="low">Low Priority</SelectItem>
-                        <SelectItem value="medium">Medium Priority</SelectItem>
-                        <SelectItem value="high">High Priority</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <FormField
-              control={form.control}
-              name="teacher"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Teacher (Optional)</FormLabel>
+                  <FormLabel>Assignment</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Teacher name" 
+                      placeholder="Enter assignment title" 
                       {...field} 
-                      data-testid="input-teacher"
+                      data-testid="input-assignment-title"
                     />
                   </FormControl>
                   <FormMessage />
@@ -249,17 +188,24 @@ export function AssignmentForm({ open, onClose, assignment }: AssignmentFormProp
               )}
             />
             
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="syncCalendar" 
-                checked={syncCalendar}
-                onCheckedChange={(checked) => setSyncCalendar(checked as boolean)}
-                data-testid="checkbox-sync-calendar"
-              />
-              <label htmlFor="syncCalendar" className="text-sm text-gray-700">
-                Sync to Google Calendar
-              </label>
-            </div>
+            {/* Due Date & Time - Third Field */}
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Due Date & Time</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="datetime-local" 
+                      {...field}
+                      data-testid="input-due-date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <div className="flex justify-end space-x-3 pt-4">
               <Button 
