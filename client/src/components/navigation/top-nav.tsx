@@ -52,7 +52,7 @@ export function TopNav({ onAddAssignment }: TopNavProps) {
   ];
 
   return (
-    <nav className="bg-material-blue-700 text-white shadow-material-2 sticky top-0 z-50">
+    <nav className="bg-black text-white shadow-material-2 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-4">
@@ -70,8 +70,8 @@ export function TopNav({ onAddAssignment }: TopNavProps) {
               <Link key={item.path} href={item.path}>
                 <Button
                   variant="ghost"
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-material-blue-500 transition-colors text-white hover:text-white ${
-                    location === item.path ? 'bg-material-blue-500' : ''
+                  className={`flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-gray-800 transition-colors text-white hover:text-white ${
+                    location === item.path ? 'bg-gray-800' : ''
                   }`}
                   data-testid={`nav-${item.label.toLowerCase()}`}
                 >
@@ -89,7 +89,7 @@ export function TopNav({ onAddAssignment }: TopNavProps) {
               value={(currentUser as any)?.id || ""} 
               onValueChange={handleUserSwitch}
             >
-              <SelectTrigger className="w-auto bg-transparent border-none text-white hover:bg-material-blue-500 focus:ring-0 focus:ring-offset-0">
+              <SelectTrigger className="w-auto bg-transparent border-none text-white hover:bg-gray-800 focus:ring-0 focus:ring-offset-0">
                 <div className="flex items-center space-x-2">
                   <Avatar className="w-8 h-8 bg-material-green-500">
                     <AvatarFallback className="text-white text-sm font-medium">

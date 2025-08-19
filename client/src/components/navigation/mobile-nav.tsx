@@ -22,8 +22,8 @@ export function MobileNav() {
               variant="ghost"
               className={`flex flex-col items-center py-2 px-4 ${
                 location === item.path 
-                  ? 'text-material-blue-700' 
-                  : 'text-gray-500 hover:text-material-blue-700'
+                  ? 'text-black' 
+                  : 'text-gray-500 hover:text-black'
               }`}
               data-testid={`mobile-nav-${item.label.toLowerCase()}`}
             >
