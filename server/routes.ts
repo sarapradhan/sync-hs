@@ -97,15 +97,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/assignments", async (req, res) => {
     try {
+      const currentUser = await storage.getCurrentUser();
       const validatedData = insertAssignmentSchema.parse(req.body);
       const { syncToCalendar } = req.body;
       
+      // Add userId to the assignment data
+      const assignmentData = {
+        ...validatedData,
+        userId: currentUser.id
+      };
+      
       // Create the assignment first
-      const assignment = await storage.createAssignment(validatedData);
+      const assignment = await storage.createAssignment(assignmentData);
       
       // If calendar sync is requested and user has tokens, create calendar event
       if (syncToCalendar) {
-        const currentUser = await storage.getCurrentUser();
         const userTokens = userCalendarTokens.getTokens(currentUser.id);
         
         if (userTokens) {
@@ -558,8 +564,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tokens = await calendarService.getTokens(code);
       const currentUser = await storage.getCurrentUser();
       
-      // Store the tokens for the current user
-      userCalendarTokens.setTokens(currentUser.id, tokens);
+      // Store tokens with proper type conversion
+      const userTokens: UserCalendarTokens = {
+        access_token: tokens.access_token || '',
+        refresh_token: tokens.refresh_token || null,
+        scope: tokens.scope || '',
+        token_type: tokens.token_type || 'Bearer',
+        expiry_date: tokens.expiry_date
+      };
+      userCalendarTokens.setTokens(currentUser.id, userTokens);
 
       // Redirect to frontend with success message
       res.redirect(`/?calendar=connected`);

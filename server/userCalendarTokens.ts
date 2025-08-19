@@ -3,7 +3,7 @@
 
 interface UserCalendarTokens {
   access_token: string;
-  refresh_token?: string;
+  refresh_token?: string | null;
   scope: string;
   token_type: string;
   expiry_date?: number;

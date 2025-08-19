@@ -53,6 +53,7 @@ export const insertAssignmentSchema = createInsertSchema(assignments).omit({
   createdAt: true,
   updatedAt: true,
   googleCalendarEventId: true,
+  userId: true,
 }).extend({
   dueDate: z.string().transform((str) => new Date(str)),
   progress: z.number().min(0).max(100).optional(),
