@@ -6,7 +6,7 @@ import { ObjectStorageService } from "./objectStorage";
 import { z } from "zod";
 import * as XLSX from "xlsx";
 import { calendarService } from "./calendar";
-import { userCalendarTokens } from "./userCalendarTokens";
+import { userCalendarTokens, type UserCalendarTokens } from "./userCalendarTokens";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -570,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         refresh_token: tokens.refresh_token || null,
         scope: tokens.scope || '',
         token_type: tokens.token_type || 'Bearer',
-        expiry_date: tokens.expiry_date
+        expiry_date: tokens.expiry_date || undefined
       };
       userCalendarTokens.setTokens(currentUser.id, userTokens);
 

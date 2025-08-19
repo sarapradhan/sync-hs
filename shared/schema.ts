@@ -59,7 +59,9 @@ export const insertAssignmentSchema = createInsertSchema(assignments).omit({
   progress: z.number().min(0).max(100).optional(),
 });
 
-export const updateAssignmentSchema = insertAssignmentSchema.partial();
+export const updateAssignmentSchema = insertAssignmentSchema.partial().extend({
+  googleCalendarEventId: z.string().optional(),
+});
 
 export const insertSubjectSchema = createInsertSchema(subjects).omit({
   id: true,
