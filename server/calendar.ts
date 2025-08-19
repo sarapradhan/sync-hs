@@ -7,9 +7,9 @@ export class GoogleCalendarService {
 
   constructor() {
     this.auth = new google.auth.OAuth2(
-      process.env.GOOGLE_CALENDAR_CLIENT_ID,
-      process.env.GOOGLE_CALENDAR_CLIENT_SECRET,
-      `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/auth/google/callback`
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/auth/google/calendar/callback`
     );
 
     this.calendar = google.calendar({ version: 'v3', auth: this.auth });

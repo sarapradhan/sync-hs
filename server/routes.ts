@@ -554,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/auth/google/callback", async (req, res) => {
+  app.get("/auth/google/calendar/callback", async (req, res) => {
     try {
       const { code } = req.query;
       if (!code || typeof code !== 'string') {
