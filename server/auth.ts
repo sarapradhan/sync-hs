@@ -31,10 +31,14 @@ export function setupAuth(app: Express) {
 
   // Configure Google OAuth strategy
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    // Support multiple domains - use the first one as default, but the OAuth will work with any registered domain
+    const domains = process.env.REPLIT_DOMAINS?.split(',') || ['localhost:5000'];
+    const primaryDomain = domains[0];
+    
     passport.use(new GoogleStrategy({
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/auth/google/callback`
+      callbackURL: `https://${primaryDomain}/auth/google/callback`
     }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
       try {
         // Extract user info from Google profile

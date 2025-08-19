@@ -6,10 +6,14 @@ export class GoogleCalendarService {
   private auth;
 
   constructor() {
+    // Support multiple domains - use the first one as default, but the OAuth will work with any registered domain
+    const domains = process.env.REPLIT_DOMAINS?.split(',') || ['localhost:5000'];
+    const primaryDomain = domains[0];
+    
     this.auth = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
       process.env.GOOGLE_CLIENT_SECRET,
-      `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/auth/google/calendar/callback`
+      `https://${primaryDomain}/auth/google/calendar/callback`
     );
 
     this.calendar = google.calendar({ version: 'v3', auth: this.auth });
