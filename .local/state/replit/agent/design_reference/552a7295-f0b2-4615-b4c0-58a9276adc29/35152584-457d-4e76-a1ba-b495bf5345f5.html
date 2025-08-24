@@ -1,0 +1,662 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudySync - Student Assignment Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'material-blue': {
+                            50: '#E3F2FD',
+                            500: '#2196F3',
+                            700: '#1976D2',
+                        },
+                        'material-green': {
+                            500: '#4CAF50',
+                            600: '#388E3C',
+                        },
+                        'material-orange': {
+                            500: '#FF9800',
+                            600: '#F57C00',
+                        },
+                        'material-red': {
+                            500: '#F44336',
+                            600: '#D32F2F',
+                        }
+                    },
+                    fontFamily: {
+                        'roboto': ['Roboto', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'material-1': '0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24)',
+                        'material-2': '0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23)',
+                        'material-3': '0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23)',
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-gray-50 font-roboto">
+    <!-- @COMPONENT: AppShell [navigation and layout wrapper] -->
+    <!-- Top Navigation Bar -->
+    <nav class="bg-material-blue-700 text-white shadow-material-2 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="material-icons text-2xl">school</span>
+                        <h1 class="text-xl font-medium">StudySync</h1>
+                    </div>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-6">
+                    <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-material-blue-500 transition-colors" data-event="click:navigateToDashboard">
+                        <span class="material-icons text-sm">dashboard</span>
+                        <span>Dashboard</span>
+                    </button>
+                    <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-material-blue-500 transition-colors" data-event="click:navigateToAssignments">
+                        <span class="material-icons text-sm">assignment</span>
+                        <span>Assignments</span>
+                    </button>
+                    <button class="flex items-center space-x-1 px-3 py-2 rounded-md hover:bg-material-blue-500 transition-colors" data-event="click:navigateToCalendar">
+                        <span class="material-icons text-sm">calendar_today</span>
+                        <span>Calendar</span>
+                    </button>
+                </div>
+
+                <!-- User Menu -->
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 rounded-full hover:bg-material-blue-500 transition-colors" data-event="click:toggleNotifications">
+                        <span class="material-icons">notifications</span>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-material-green-500 rounded-full flex items-center justify-center">
+                            <span class="text-white text-sm font-medium" data-bind="user.initials">JS</span>
+                        </div>
+                        <span class="hidden sm:block text-sm" data-bind="user.name">Jane Student</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: AppShell -->
+
+    <!-- @COMPONENT: MobileNavigation [bottom navigation for mobile] -->
+    <!-- Mobile Bottom Navigation -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
+        <div class="flex justify-around py-2">
+            <button class="flex flex-col items-center py-2 px-4 text-material-blue-700" data-event="click:navigateToDashboard">
+                <span class="material-icons text-sm">dashboard</span>
+                <span class="text-xs mt-1">Dashboard</span>
+            </button>
+            <button class="flex flex-col items-center py-2 px-4 text-gray-500" data-event="click:navigateToAssignments">
+                <span class="material-icons text-sm">assignment</span>
+                <span class="text-xs mt-1">Tasks</span>
+            </button>
+            <button class="flex flex-col items-center py-2 px-4 text-gray-500" data-event="click:navigateToCalendar">
+                <span class="material-icons text-sm">calendar_today</span>
+                <span class="text-xs mt-1">Calendar</span>
+            </button>
+            <button class="flex flex-col items-center py-2 px-4 text-gray-500" data-event="click:openSettings">
+                <span class="material-icons text-sm">settings</span>
+                <span class="text-xs mt-1">Settings</span>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: MobileNavigation -->
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
+        <!-- @COMPONENT: DashboardHeader [overview stats and quick actions] -->
+        <!-- Dashboard Header -->
+        <div class="mb-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                <div>
+                    <h2 class="text-2xl font-medium text-gray-900 mb-2">Welcome back, <span data-bind="user.firstName">Jane</span>!</h2>
+                    <p class="text-gray-600" data-bind="dashboard.todayDate">Today is Monday, October 23, 2023</p>
+                </div>
+                <div class="flex items-center space-x-3 mt-4 sm:mt-0">
+                    <button class="flex items-center space-x-2 bg-material-blue-500 text-white px-4 py-2 rounded-md hover:bg-material-blue-700 transition-colors shadow-material-1" data-event="click:openAddAssignment">
+                        <span class="material-icons text-sm">add</span>
+                        <span>Add Assignment</span>
+                    </button>
+                    <button class="flex items-center space-x-2 border border-gray-300 px-4 py-2 rounded-md hover:bg-gray-50 transition-colors" data-event="click:openImportModal">
+                        <span class="material-icons text-sm">file_upload</span>
+                        <span class="hidden sm:inline">Import</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Stats Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-material-red-500 bg-opacity-10 rounded-lg">
+                            <span class="material-icons text-material-red-500">assignment_late</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Due Today</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.dueToday">3</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-material-orange-500 bg-opacity-10 rounded-lg">
+                            <span class="material-icons text-material-orange-500">schedule</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">This Week</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.thisWeek">7</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-material-green-500 bg-opacity-10 rounded-lg">
+                            <span class="material-icons text-material-green-500">assignment_turned_in</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Completed</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.completed">12</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 bg-material-blue-500 bg-opacity-10 rounded-lg">
+                            <span class="material-icons text-material-blue-500">assignment</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Active</p>
+                            <p class="text-2xl font-semibold text-gray-900" data-bind="stats.totalActive">18</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: DashboardHeader -->
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- @COMPONENT: UpcomingAssignments [assignment list with priority] -->
+            <!-- Left Column: Upcoming Assignments -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-medium text-gray-900">Upcoming Assignments</h3>
+                        <div class="flex items-center space-x-2">
+                            <select class="text-sm border border-gray-300 rounded-md px-3 py-1" data-event="change:filterAssignments">
+                                <option value="all">All Subjects</option>
+                                <option value="math">Mathematics</option>
+                                <option value="english">English</option>
+                                <option value="science">Science</option>
+                                <option value="history">History</option>
+                            </select>
+                            <button class="p-2 hover:bg-gray-100 rounded-md transition-colors" data-event="click:toggleView">
+                                <span class="material-icons text-sm">view_list</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- @MAP: assignments.map(assignment => ( -->
+                    <div class="space-y-4" data-mock="true">
+                        <!-- Assignment Item 1 -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-material-2 transition-shadow cursor-pointer" data-event="click:viewAssignment">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-material-red-500 text-white">High Priority</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Mathematics</span>
+                                    </div>
+                                    <h4 class="text-base font-medium text-gray-900 mb-1" data-bind="assignment.title">Calculus Problem Set Chapter 12</h4>
+                                    <p class="text-sm text-gray-600 mb-2" data-bind="assignment.description">Complete problems 1-25, show all work for partial credit</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <div class="flex items-center space-x-1">
+                                            <span class="material-icons text-xs">schedule</span>
+                                            <span data-bind="assignment.dueDate">Due Tomorrow, 11:59 PM</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <span class="material-icons text-xs">person</span>
+                                            <span data-bind="assignment.teacher">Mr. Johnson</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <button class="p-2 hover:bg-gray-100 rounded-md transition-colors" data-event="click:editAssignment">
+                                        <span class="material-icons text-sm text-gray-400">edit</span>
+                                    </button>
+                                    <button class="p-2 hover:bg-green-100 rounded-md transition-colors" data-event="click:markComplete">
+                                        <span class="material-icons text-sm text-gray-400">check_circle_outline</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 bg-gray-200 rounded-full h-2">
+                                <div class="bg-material-orange-500 h-2 rounded-full w-1/4" data-bind="assignment.progress"></div>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Item 2 -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-material-2 transition-shadow cursor-pointer" data-event="click:viewAssignment">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-material-orange-500 text-white">Medium Priority</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">English</span>
+                                    </div>
+                                    <h4 class="text-base font-medium text-gray-900 mb-1" data-bind="assignment.title">Essay: Shakespeare Analysis</h4>
+                                    <p class="text-sm text-gray-600 mb-2" data-bind="assignment.description">5-page analysis of themes in Hamlet, MLA format required</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <div class="flex items-center space-x-1">
+                                            <span class="material-icons text-xs">schedule</span>
+                                            <span data-bind="assignment.dueDate">Due Friday, Oct 27</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <span class="material-icons text-xs">person</span>
+                                            <span data-bind="assignment.teacher">Ms. Davis</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <button class="p-2 hover:bg-gray-100 rounded-md transition-colors" data-event="click:editAssignment">
+                                        <span class="material-icons text-sm text-gray-400">edit</span>
+                                    </button>
+                                    <button class="p-2 hover:bg-green-100 rounded-md transition-colors" data-event="click:markComplete">
+                                        <span class="material-icons text-sm text-gray-400">check_circle_outline</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 bg-gray-200 rounded-full h-2">
+                                <div class="bg-material-blue-500 h-2 rounded-full w-3/4" data-bind="assignment.progress"></div>
+                            </div>
+                        </div>
+
+                        <!-- Assignment Item 3 -->
+                        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-material-2 transition-shadow cursor-pointer" data-event="click:viewAssignment">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-500 text-white">Low Priority</span>
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">History</span>
+                                    </div>
+                                    <h4 class="text-base font-medium text-gray-900 mb-1" data-bind="assignment.title">World War II Timeline Project</h4>
+                                    <p class="text-sm text-gray-600 mb-2" data-bind="assignment.description">Create interactive timeline with major events and key figures</p>
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <div class="flex items-center space-x-1">
+                                            <span class="material-icons text-xs">schedule</span>
+                                            <span data-bind="assignment.dueDate">Due Nov 3</span>
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            <span class="material-icons text-xs">person</span>
+                                            <span data-bind="assignment.teacher">Mr. Wilson</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-2 ml-4">
+                                    <button class="p-2 hover:bg-gray-100 rounded-md transition-colors" data-event="click:editAssignment">
+                                        <span class="material-icons text-sm text-gray-400">edit</span>
+                                    </button>
+                                    <button class="p-2 hover:bg-green-100 rounded-md transition-colors" data-event="click:markComplete">
+                                        <span class="material-icons text-sm text-gray-400">check_circle_outline</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-3 bg-gray-200 rounded-full h-2">
+                                <div class="bg-material-green-500 h-2 rounded-full w-1/2" data-bind="assignment.progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_MAP )) -->
+
+                    <div class="mt-6 text-center">
+                        <button class="text-material-blue-700 hover:text-material-blue-500 font-medium text-sm" data-event="click:viewAllAssignments">
+                            View All Assignments
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: UpcomingAssignments -->
+
+            <!-- @COMPONENT: Sidebar [calendar and quick actions] -->
+            <!-- Right Column: Mini Calendar & Quick Actions -->
+            <div class="space-y-6">
+                <!-- Mini Calendar Widget -->
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-medium text-gray-900">October 2023</h3>
+                        <div class="flex items-center space-x-1">
+                            <button class="p-1 hover:bg-gray-100 rounded" data-event="click:prevMonth">
+                                <span class="material-icons text-sm">chevron_left</span>
+                            </button>
+                            <button class="p-1 hover:bg-gray-100 rounded" data-event="click:nextMonth">
+                                <span class="material-icons text-sm">chevron_right</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Calendar Grid -->
+                    <div class="grid grid-cols-7 gap-1 text-xs font-medium text-gray-500 mb-2">
+                        <div class="text-center py-2">S</div>
+                        <div class="text-center py-2">M</div>
+                        <div class="text-center py-2">T</div>
+                        <div class="text-center py-2">W</div>
+                        <div class="text-center py-2">T</div>
+                        <div class="text-center py-2">F</div>
+                        <div class="text-center py-2">S</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-1" data-mock="true">
+                        <!-- Calendar days -->
+                        <div class="text-center py-2 text-gray-400">1</div>
+                        <div class="text-center py-2 text-gray-400">2</div>
+                        <div class="text-center py-2 text-gray-400">3</div>
+                        <div class="text-center py-2 text-gray-400">4</div>
+                        <div class="text-center py-2 text-gray-400">5</div>
+                        <div class="text-center py-2 text-gray-400">6</div>
+                        <div class="text-center py-2 text-gray-400">7</div>
+                        <div class="text-center py-2">8</div>
+                        <div class="text-center py-2">9</div>
+                        <div class="text-center py-2">10</div>
+                        <div class="text-center py-2">11</div>
+                        <div class="text-center py-2">12</div>
+                        <div class="text-center py-2">13</div>
+                        <div class="text-center py-2">14</div>
+                        <div class="text-center py-2">15</div>
+                        <div class="text-center py-2">16</div>
+                        <div class="text-center py-2">17</div>
+                        <div class="text-center py-2">18</div>
+                        <div class="text-center py-2">19</div>
+                        <div class="text-center py-2">20</div>
+                        <div class="text-center py-2">21</div>
+                        <div class="text-center py-2">22</div>
+                        <div class="text-center py-2 bg-material-blue-500 text-white rounded-full">23</div>
+                        <div class="text-center py-2 bg-material-red-500 bg-opacity-20 text-material-red-600 rounded">24</div>
+                        <div class="text-center py-2">25</div>
+                        <div class="text-center py-2">26</div>
+                        <div class="text-center py-2 bg-material-orange-500 bg-opacity-20 text-material-orange-600 rounded">27</div>
+                        <div class="text-center py-2">28</div>
+                        <div class="text-center py-2">29</div>
+                        <div class="text-center py-2">30</div>
+                        <div class="text-center py-2">31</div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <button class="w-full text-material-blue-700 hover:text-material-blue-500 font-medium text-sm" data-event="click:openFullCalendar">
+                            View Full Calendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors" data-event="click:importFromCalendar">
+                            <div class="p-2 bg-material-blue-500 bg-opacity-10 rounded-lg">
+                                <span class="material-icons text-material-blue-500 text-sm">event</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Import from Google Calendar</p>
+                                <p class="text-xs text-gray-500">Sync your existing events</p>
+                            </div>
+                        </button>
+                        
+                        <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors" data-event="click:uploadDocument">
+                            <div class="p-2 bg-material-green-500 bg-opacity-10 rounded-lg">
+                                <span class="material-icons text-material-green-500 text-sm">upload_file</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Upload Syllabus</p>
+                                <p class="text-xs text-gray-500">Extract assignments automatically</p>
+                            </div>
+                        </button>
+                        
+                        <button class="w-full flex items-center space-x-3 p-3 text-left hover:bg-gray-50 rounded-lg transition-colors" data-event="click:exportToSheets">
+                            <div class="p-2 bg-material-orange-500 bg-opacity-10 rounded-lg">
+                                <span class="material-icons text-material-orange-500 text-sm">table_chart</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">Export to Google Sheets</p>
+                                <p class="text-xs text-gray-500">Download your schedule</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="bg-white rounded-lg shadow-material-1 p-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+                    <div class="space-y-3" data-mock="true">
+                        <div class="flex items-start space-x-3">
+                            <div class="p-1 bg-material-green-500 bg-opacity-10 rounded-full">
+                                <span class="material-icons text-material-green-500 text-xs">check_circle</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-900">Completed "Biology Lab Report"</p>
+                                <p class="text-xs text-gray-500">2 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="p-1 bg-material-blue-500 bg-opacity-10 rounded-full">
+                                <span class="material-icons text-material-blue-500 text-xs">add</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-900">Added "Physics Quiz Chapter 8"</p>
+                                <p class="text-xs text-gray-500">5 hours ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <div class="p-1 bg-material-orange-500 bg-opacity-10 rounded-full">
+                                <span class="material-icons text-material-orange-500 text-xs">edit</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm text-gray-900">Updated "Math Homework"</p>
+                                <p class="text-xs text-gray-500">Yesterday</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- @END_COMPONENT: Sidebar -->
+        </div>
+    </div>
+
+    <!-- @COMPONENT: AddAssignmentModal [assignment creation form] -->
+    <!-- Add Assignment Modal -->
+    <div id="addAssignmentModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden" data-event="click:closeModal">
+        <div class="bg-white rounded-lg shadow-material-3 w-full max-w-md" data-event="click:stopPropagation">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-lg font-medium text-gray-900">Add New Assignment</h3>
+                    <button class="p-2 hover:bg-gray-100 rounded-full transition-colors" data-event="click:closeModal">
+                        <span class="material-icons text-gray-400">close</span>
+                    </button>
+                </div>
+                
+                <form class="space-y-4" data-event="submit:createAssignment">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Assignment Title</label>
+                        <input type="text" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-material-blue-500 focus:border-transparent" placeholder="Enter assignment title" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                        <select class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-material-blue-500 focus:border-transparent" required>
+                            <option value="">Select subject</option>
+                            <option value="math">Mathematics</option>
+                            <option value="english">English</option>
+                            <option value="science">Science</option>
+                            <option value="history">History</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-material-blue-500 focus:border-transparent" rows="3" placeholder="Assignment details..."></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Due Date</label>
+                            <input type="date" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-material-blue-500 focus:border-transparent" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Due Time</label>
+                            <input type="time" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-material-blue-500 focus:border-transparent" value="23:59">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Priority</label>
+                        <select class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-material-blue-500 focus:border-transparent">
+                            <option value="low">Low Priority</option>
+                            <option value="medium" selected>Medium Priority</option>
+                            <option value="high">High Priority</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="syncCalendar" class="rounded text-material-blue-500 focus:ring-material-blue-500">
+                        <label for="syncCalendar" class="text-sm text-gray-700">Sync to Google Calendar</label>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 pt-4">
+                        <button type="button" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors" data-event="click:closeModal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-material-blue-500 text-white rounded-md hover:bg-material-blue-700 transition-colors">
+                            Add Assignment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: AddAssignmentModal -->
+
+    <!-- @COMPONENT: FloatingActionButton [quick add button] -->
+    <!-- Floating Action Button -->
+    <button class="fixed bottom-20 md:bottom-6 right-6 bg-material-blue-500 text-white p-4 rounded-full shadow-material-3 hover:bg-material-blue-700 transition-colors z-40" data-event="click:openAddAssignment">
+        <span class="material-icons">add</span>
+    </button>
+    <!-- @END_COMPONENT: FloatingActionButton -->
+
+    <!-- @COMPONENT: NotificationSnackbar [feedback messages] -->
+    <!-- Snackbar for notifications -->
+    <div id="snackbar" class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-gray-800 text-white px-4 py-3 rounded-md shadow-material-3 transform translate-y-full transition-transform z-50 hidden">
+        <div class="flex items-center justify-between">
+            <span data-bind="notification.message">Assignment added successfully!</span>
+            <button class="ml-4 text-gray-300 hover:text-white" data-event="click:dismissNotification">
+                <span class="material-icons text-sm">close</span>
+            </button>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: NotificationSnackbar -->
+
+    <script>
+        // TODO: Implement business logic, API calls, and state management
+        
+        // Mock functionality for UI interactions
+        (function() {
+            // Modal handling
+            function openModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.remove('hidden');
+                }
+            }
+            
+            function closeModal(modalId) {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+            }
+            
+            // Show notification
+            function showNotification(message) {
+                const snackbar = document.getElementById('snackbar');
+                const messageEl = snackbar.querySelector('[data-bind="notification.message"]');
+                messageEl.textContent = message;
+                snackbar.classList.remove('hidden', 'translate-y-full');
+                
+                setTimeout(() => {
+                    snackbar.classList.add('translate-y-full');
+                    setTimeout(() => snackbar.classList.add('hidden'), 300);
+                }, 3000);
+            }
+            
+            // Event delegation for data-event attributes
+            document.addEventListener('click', function(e) {
+                const eventAttr = e.target.closest('[data-event]')?.getAttribute('data-event');
+                if (!eventAttr) return;
+                
+                const [event, action] = eventAttr.split(':');
+                if (event !== 'click') return;
+                
+                switch(action) {
+                    case 'openAddAssignment':
+                        openModal('addAssignmentModal');
+                        break;
+                    case 'closeModal':
+                        closeModal('addAssignmentModal');
+                        break;
+                    case 'stopPropagation':
+                        e.stopPropagation();
+                        break;
+                    case 'dismissNotification':
+                        document.getElementById('snackbar').classList.add('hidden');
+                        break;
+                    case 'importFromCalendar':
+                        showNotification('Google Calendar import feature coming soon!');
+                        break;
+                    case 'uploadDocument':
+                        showNotification('Document upload feature coming soon!');
+                        break;
+                    case 'exportToSheets':
+                        showNotification('Google Sheets export feature coming soon!');
+                        break;
+                    case 'markComplete':
+                        e.preventDefault();
+                        showNotification('Assignment marked as complete!');
+                        break;
+                    default:
+                        console.log('Action:', action);
+                }
+            });
+            
+            // Form submission handling
+            document.addEventListener('submit', function(e) {
+                const eventAttr = e.target.getAttribute('data-event');
+                if (!eventAttr) return;
+                
+                e.preventDefault();
+                const [event, action] = eventAttr.split(':');
+                
+                if (event === 'submit' && action === 'createAssignment') {
+                    // TODO: Validate form and create assignment
+                    closeModal('addAssignmentModal');
+                    showNotification('Assignment added successfully!');
+                    e.target.reset();
+                }
+            });
+        })();
+    </script>
+
+    <!-- @STATE: isModalOpen:boolean = false -->
+    <!-- @STATE: assignments:array = [] -->
+    <!-- @STATE: selectedDate:Date = new Date() -->
+    <!-- @STATE: filterSubject:string = 'all' -->
+    
+    <!-- @FUNCTIONALITY: This app should implement Google Calendar API integration for bidirectional sync -->
+    <!-- @FUNCTIONALITY: Google Sheets API integration for data export -->
+    <!-- @FUNCTIONALITY: Document parsing for syllabus upload -->
+    <!-- @FUNCTIONALITY: Local storage for offline data persistence -->
+    <!-- @FUNCTIONALITY: Real-time notifications for upcoming deadlines -->
+</body>
+</html>
